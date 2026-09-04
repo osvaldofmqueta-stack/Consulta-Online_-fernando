@@ -22,27 +22,27 @@ export const HealthCheckResponse = zod.object({
  */
 export const GetDashboardSummaryResponse = zod.object({
   "date": zod.coerce.date(),
-  "totalAppointments": zod.int(),
-  "completedAppointments": zod.int(),
-  "waitingPatients": zod.int(),
-  "inProgressAppointments": zod.int(),
-  "cancelledAppointments": zod.int(),
+  "totalAppointments": zod.number(),
+  "completedAppointments": zod.number(),
+  "waitingPatients": zod.number(),
+  "inProgressAppointments": zod.number(),
+  "cancelledAppointments": zod.number(),
   "averageWaitMinutes": zod.number().optional(),
   "departments": zod.array(zod.object({
-  "departmentId": zod.int(),
+  "departmentId": zod.number(),
   "departmentName": zod.string(),
-  "total": zod.int(),
-  "completed": zod.int(),
-  "waiting": zod.int()
+  "total": zod.number(),
+  "completed": zod.number(),
+  "waiting": zod.number()
 })),
   "nextAppointment": zod.union([zod.object({
-  "id": zod.int(),
-  "patientId": zod.int(),
+  "id": zod.number(),
+  "patientId": zod.number(),
   "patientName": zod.string(),
   "medicalRecordNumber": zod.string(),
-  "departmentId": zod.int(),
+  "departmentId": zod.number(),
   "departmentName": zod.string(),
-  "doctorId": zod.int(),
+  "doctorId": zod.number(),
   "doctorName": zod.string(),
   "date": zod.coerce.date(),
   "time": zod.string(),
@@ -60,18 +60,18 @@ export const GetDashboardSummaryResponse = zod.object({
 export const ListAppointmentsQueryParams = zod.object({
   "date": zod.date().optional(),
   "status": zod.enum(['scheduled', 'confirmed', 'waiting', 'in_progress', 'completed', 'cancelled', 'no_show']).optional(),
-  "departmentId": zod.coerce.number().int().optional(),
+  "departmentId": zod.coerce.number().optional(),
   "search": zod.coerce.string().optional()
 })
 
 export const ListAppointmentsResponseItem = zod.object({
-  "id": zod.int(),
-  "patientId": zod.int(),
+  "id": zod.number(),
+  "patientId": zod.number(),
   "patientName": zod.string(),
   "medicalRecordNumber": zod.string(),
-  "departmentId": zod.int(),
+  "departmentId": zod.number(),
   "departmentName": zod.string(),
-  "doctorId": zod.int(),
+  "doctorId": zod.number(),
   "doctorName": zod.string(),
   "date": zod.coerce.date(),
   "time": zod.string(),
@@ -87,9 +87,9 @@ export const ListAppointmentsResponse = zod.array(ListAppointmentsResponseItem)
  * @summary Schedule a consultation
  */
 export const CreateAppointmentBody = zod.object({
-  "patientId": zod.int(),
-  "departmentId": zod.int(),
-  "doctorId": zod.int(),
+  "patientId": zod.number(),
+  "departmentId": zod.number(),
+  "doctorId": zod.number(),
   "date": zod.coerce.date(),
   "time": zod.string(),
   "type": zod.enum(['first_visit', 'follow_up', 'return']),
@@ -97,13 +97,13 @@ export const CreateAppointmentBody = zod.object({
 })
 
 export const CreateAppointmentResponse = zod.object({
-  "id": zod.int(),
-  "patientId": zod.int(),
+  "id": zod.number(),
+  "patientId": zod.number(),
   "patientName": zod.string(),
   "medicalRecordNumber": zod.string(),
-  "departmentId": zod.int(),
+  "departmentId": zod.number(),
   "departmentName": zod.string(),
-  "doctorId": zod.int(),
+  "doctorId": zod.number(),
   "doctorName": zod.string(),
   "date": zod.coerce.date(),
   "time": zod.string(),
@@ -118,25 +118,25 @@ export const CreateAppointmentResponse = zod.object({
  * @summary Update consultation status or details
  */
 export const UpdateAppointmentParams = zod.object({
-  "id": zod.coerce.number().int()
+  "id": zod.coerce.number()
 })
 
 export const UpdateAppointmentBody = zod.object({
   "date": zod.coerce.date().optional(),
   "time": zod.string().optional(),
-  "doctorId": zod.int().optional(),
+  "doctorId": zod.number().optional(),
   "status": zod.enum(['scheduled', 'confirmed', 'waiting', 'in_progress', 'completed', 'cancelled', 'no_show']).optional(),
   "notes": zod.string().optional()
 })
 
 export const UpdateAppointmentResponse = zod.object({
-  "id": zod.int(),
-  "patientId": zod.int(),
+  "id": zod.number(),
+  "patientId": zod.number(),
   "patientName": zod.string(),
   "medicalRecordNumber": zod.string(),
-  "departmentId": zod.int(),
+  "departmentId": zod.number(),
   "departmentName": zod.string(),
-  "doctorId": zod.int(),
+  "doctorId": zod.number(),
   "doctorName": zod.string(),
   "date": zod.coerce.date(),
   "time": zod.string(),
@@ -157,11 +157,11 @@ export const listPatientsQueryLimitMax = 100;
 
 export const ListPatientsQueryParams = zod.object({
   "search": zod.coerce.string().optional(),
-  "limit": zod.coerce.number().int().min(1).max(listPatientsQueryLimitMax).default(listPatientsQueryLimitDefault)
+  "limit": zod.coerce.number().min(1).max(listPatientsQueryLimitMax).default(listPatientsQueryLimitDefault)
 })
 
 export const ListPatientsResponseItem = zod.object({
-  "id": zod.int(),
+  "id": zod.number(),
   "medicalRecordNumber": zod.string(),
   "name": zod.string(),
   "sex": zod.enum(['female', 'male', 'other']),
@@ -189,7 +189,7 @@ export const CreatePatientBody = zod.object({
 })
 
 export const CreatePatientResponse = zod.object({
-  "id": zod.int(),
+  "id": zod.number(),
   "medicalRecordNumber": zod.string(),
   "name": zod.string(),
   "sex": zod.enum(['female', 'male', 'other']),
@@ -204,11 +204,11 @@ export const CreatePatientResponse = zod.object({
  * @summary Get patient details and consultation history
  */
 export const GetPatientParams = zod.object({
-  "id": zod.coerce.number().int()
+  "id": zod.coerce.number()
 })
 
 export const GetPatientResponse = zod.object({
-  "id": zod.int(),
+  "id": zod.number(),
   "medicalRecordNumber": zod.string(),
   "name": zod.string(),
   "sex": zod.enum(['female', 'male', 'other']),
@@ -218,13 +218,13 @@ export const GetPatientResponse = zod.object({
   "createdAt": zod.coerce.date()
 }).and(zod.object({
   "appointments": zod.array(zod.object({
-  "id": zod.int(),
-  "patientId": zod.int(),
+  "id": zod.number(),
+  "patientId": zod.number(),
   "patientName": zod.string(),
   "medicalRecordNumber": zod.string(),
-  "departmentId": zod.int(),
+  "departmentId": zod.number(),
   "departmentName": zod.string(),
-  "doctorId": zod.int(),
+  "doctorId": zod.number(),
   "doctorName": zod.string(),
   "date": zod.coerce.date(),
   "time": zod.string(),
@@ -240,7 +240,7 @@ export const GetPatientResponse = zod.object({
  * @summary List hospital consultation departments
  */
 export const ListDepartmentsResponseItem = zod.object({
-  "id": zod.int(),
+  "id": zod.number(),
   "name": zod.string(),
   "color": zod.string(),
   "active": zod.boolean()
@@ -252,14 +252,14 @@ export const ListDepartmentsResponse = zod.array(ListDepartmentsResponseItem)
  * @summary List clinicians
  */
 export const ListDoctorsQueryParams = zod.object({
-  "departmentId": zod.coerce.number().int().optional()
+  "departmentId": zod.coerce.number().optional()
 })
 
 export const ListDoctorsResponseItem = zod.object({
-  "id": zod.int(),
+  "id": zod.number(),
   "name": zod.string(),
   "specialty": zod.string(),
-  "departmentId": zod.int(),
+  "departmentId": zod.number(),
   "initials": zod.string(),
   "active": zod.boolean()
 })
@@ -275,11 +275,11 @@ export const listActivityQueryLimitMax = 50;
 
 
 export const ListActivityQueryParams = zod.object({
-  "limit": zod.coerce.number().int().min(1).max(listActivityQueryLimitMax).default(listActivityQueryLimitDefault)
+  "limit": zod.coerce.number().min(1).max(listActivityQueryLimitMax).default(listActivityQueryLimitDefault)
 })
 
 export const ListActivityResponseItem = zod.object({
-  "id": zod.int(),
+  "id": zod.number(),
   "type": zod.enum(['appointment_created', 'patient_registered', 'status_updated', 'appointment_completed']),
   "message": zod.string(),
   "actor": zod.string().nullish(),

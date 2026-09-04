@@ -1,6 +1,6 @@
-# [Project name]
+# Gestão de Consultas — Hospital de Malanje
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Plataforma web para coordenar pacientes, consultas, fila de atendimento e acompanhamento operacional do Hospital de Malanje, sem módulos de ERP.
 
 ## Run & Operate
 
@@ -22,23 +22,32 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/hospital-malanje/src/` — interface, shell e páginas operacionais
+- `artifacts/api-server/src/routes/hospital.ts` — endpoints do domínio hospitalar
+- `artifacts/api-server/src/lib/hospital-data.ts` — composição das respostas de consultas
+- `artifacts/api-server/src/lib/seed.ts` — dados iniciais de demonstração
+- `lib/api-spec/openapi.yaml` — contrato fonte das operações e tipos
+- `lib/db/src/schema/` — tabelas persistentes do domínio
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- O produto é deliberadamente focado no circuito de consultas; compras, stock, faturação, salários e contabilidade ficam fora do escopo.
+- A agenda usa estados operacionais (`scheduled`, `confirmed`, `waiting`, `in_progress`, `completed`, `cancelled`, `no_show`) para refletir a fila real de atendimento.
+- Datas de agenda e nascimento são armazenadas como dias de calendário; timestamps são usados apenas para criação e atividade.
+- O dashboard e a fila consultam a API e a base de dados; os dados iniciais servem para a primeira abertura da aplicação não ficar vazia.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+O sistema permite acompanhar o resumo diário de consultas, pesquisar e registar pacientes, marcar consultas por departamento e profissional, avançar o estado da fila, consultar o histórico de cada paciente, acompanhar a atividade recente e ver indicadores de atendimento.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- O utilizador pediu uma plataforma de gestão de consultas hospitalares, não um ERP.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Depois de alterar `lib/api-spec/openapi.yaml`, executar `pnpm --filter @workspace/api-spec run codegen` antes de validar os pacotes.
+- O gerador atual deve receber campos numéricos como `number` no OpenAPI; `integer` gera `zod.int()`, incompatível com o catálogo Zod 3.25 desta base.
 
 ## Pointers
 

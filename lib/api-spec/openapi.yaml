@@ -60,7 +60,7 @@ paths:
             enum: [scheduled, confirmed, waiting, in_progress, completed, cancelled, no_show]
         - name: departmentId
           in: query
-          schema: { type: integer }
+          schema: { type: number }
         - name: search
           in: query
           schema: { type: string }
@@ -99,7 +99,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: number }
       requestBody:
         required: true
         content:
@@ -126,7 +126,7 @@ paths:
           schema: { type: string }
         - name: limit
           in: query
-          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+          schema: { type: number, minimum: 1, maximum: 100, default: 20 }
       responses:
         "200":
           description: Patients
@@ -162,7 +162,7 @@ paths:
         - name: id
           in: path
           required: true
-          schema: { type: integer }
+          schema: { type: number }
       responses:
         "200":
           description: Patient detail
@@ -194,7 +194,7 @@ paths:
       parameters:
         - name: departmentId
           in: query
-          schema: { type: integer }
+          schema: { type: number }
       responses:
         "200":
           description: Clinicians
@@ -212,7 +212,7 @@ paths:
       parameters:
         - name: limit
           in: query
-          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+          schema: { type: number, minimum: 1, maximum: 50, default: 10 }
       responses:
         "200":
           description: Recent activity
@@ -235,7 +235,7 @@ components:
       type: object
       required: [id, name, color, active]
       properties:
-        id: { type: integer }
+        id: { type: number }
         name: { type: string }
         color: { type: string }
         active: { type: boolean }
@@ -243,17 +243,17 @@ components:
       type: object
       required: [id, name, specialty, departmentId, initials, active]
       properties:
-        id: { type: integer }
+        id: { type: number }
         name: { type: string }
         specialty: { type: string }
-        departmentId: { type: integer }
+        departmentId: { type: number }
         initials: { type: string }
         active: { type: boolean }
     Patient:
       type: object
       required: [id, medicalRecordNumber, name, sex, birthDate, phone, createdAt]
       properties:
-        id: { type: integer }
+        id: { type: number }
         medicalRecordNumber: { type: string }
         name: { type: string }
         sex:
@@ -288,13 +288,13 @@ components:
       type: object
       required: [id, patientId, patientName, medicalRecordNumber, departmentId, departmentName, doctorId, doctorName, date, time, status, type, createdAt]
       properties:
-        id: { type: integer }
-        patientId: { type: integer }
+        id: { type: number }
+        patientId: { type: number }
         patientName: { type: string }
         medicalRecordNumber: { type: string }
-        departmentId: { type: integer }
+        departmentId: { type: number }
         departmentName: { type: string }
-        doctorId: { type: integer }
+        doctorId: { type: number }
         doctorName: { type: string }
         date: { type: string, format: date }
         time: { type: string }
@@ -310,9 +310,9 @@ components:
       type: object
       required: [patientId, departmentId, doctorId, date, time, type]
       properties:
-        patientId: { type: integer }
-        departmentId: { type: integer }
-        doctorId: { type: integer }
+        patientId: { type: number }
+        departmentId: { type: number }
+        doctorId: { type: number }
         date: { type: string, format: date }
         time: { type: string }
         type:
@@ -324,7 +324,7 @@ components:
       properties:
         date: { type: string, format: date }
         time: { type: string }
-        doctorId: { type: integer }
+        doctorId: { type: number }
         status:
           type: string
           enum: [scheduled, confirmed, waiting, in_progress, completed, cancelled, no_show]
@@ -334,11 +334,11 @@ components:
       required: [date, totalAppointments, completedAppointments, waitingPatients, inProgressAppointments, cancelledAppointments, departments, nextAppointment]
       properties:
         date: { type: string, format: date }
-        totalAppointments: { type: integer }
-        completedAppointments: { type: integer }
-        waitingPatients: { type: integer }
-        inProgressAppointments: { type: integer }
-        cancelledAppointments: { type: integer }
+        totalAppointments: { type: number }
+        completedAppointments: { type: number }
+        waitingPatients: { type: number }
+        inProgressAppointments: { type: number }
+        cancelledAppointments: { type: number }
         averageWaitMinutes: { type: number }
         departments:
           type: array
@@ -352,16 +352,16 @@ components:
       type: object
       required: [departmentId, departmentName, total, completed, waiting]
       properties:
-        departmentId: { type: integer }
+        departmentId: { type: number }
         departmentName: { type: string }
-        total: { type: integer }
-        completed: { type: integer }
-        waiting: { type: integer }
+        total: { type: number }
+        completed: { type: number }
+        waiting: { type: number }
     ActivityItem:
       type: object
       required: [id, type, message, timestamp]
       properties:
-        id: { type: integer }
+        id: { type: number }
         type:
           type: string
           enum: [appointment_created, patient_registered, status_updated, appointment_completed]
