@@ -1,7 +1,7 @@
 kind = "web"
 previewPath = "/"
 title = "Hospital de Malanje — Gestão de Consultas"
-description = "Plataforma web para gestão operacional de pacientes, consultas, fila de atendimento e acompanhamento clínico no Hospital de Malanje, sem módulos de ERP."
+description = "Aplicação PHP com Tailwind CSS para gestão operacional de pacientes, consultas, mensagens e acompanhamento clínico no Hospital de Malanje."
 version = "1.0.0"
 id = "artifacts/hospital-malanje"
 router = "path"
@@ -15,13 +15,12 @@ localPort = 21990
 run = "pnpm --filter @workspace/hospital-malanje run dev"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/hospital-malanje", "run", "build" ]
-serve = "static"
-publicDir = "artifacts/hospital-malanje/dist/public"
 
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
+[services.production.build]
+args = [ "pnpm", "--filter", "@workspace/hospital-malanje", "run", "build" ]
+
+[services.production.run]
+args = [ "pnpm", "--filter", "@workspace/hospital-malanje", "run", "serve" ]
 
 [services.env]
 PORT = "21990"

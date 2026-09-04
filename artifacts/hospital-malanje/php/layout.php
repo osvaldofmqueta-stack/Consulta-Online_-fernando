@@ -10,13 +10,7 @@ function page_start(string $title, ?array $user = null): void
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title><?= e($title) ?> · Hospital de Malanje</title>
         <link rel="icon" href="/favicon.svg">
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script>
-            tailwind.config = { theme: { extend: {
-                colors: { ink: '#21413f', paper: '#fbf8f1', teal: '#1e706c', sand: '#eee6d8', coral: '#d88968' },
-                fontFamily: { sans: ['DM Sans', 'ui-sans-serif', 'sans-serif'], mono: ['Space Mono', 'ui-monospace', 'monospace'] }
-            }}};
-        </script>
+        <link rel="stylesheet" href="/app.css">
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">

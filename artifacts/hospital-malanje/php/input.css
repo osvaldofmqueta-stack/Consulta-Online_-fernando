@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@source "./*.php";
+
+@theme {
+  --color-ink: #21413f;
+  --color-paper: #fbf8f1;
+  --color-teal: #1e706c;
+  --color-sand: #eee6d8;
+  --color-coral: #d88968;
+  --font-sans: "DM Sans", ui-sans-serif, sans-serif;
+  --font-mono: "Space Mono", ui-monospace, monospace;
+}
