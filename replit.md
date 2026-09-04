@@ -6,7 +6,6 @@ Plataforma web para coordenar pacientes, consultas, fila de atendimento e acompa
 
 - `pnpm --filter @workspace/hospital-malanje run dev` — iniciar a aplicação PHP/Tailwind
 - `pnpm --filter @workspace/hospital-malanje run build` — compilar o CSS e preparar a aplicação
-- `pnpm --filter @workspace/hospital-malanje run typecheck` — validar o legado TypeScript ainda mantido no pacote
 - Required env: `DATABASE_URL` — ligação PostgreSQL
 
 ## Stack
@@ -39,11 +38,6 @@ O sistema permite acompanhar o resumo diário de consultas, pesquisar e registar
 ## User preferences
 
 - O utilizador pediu uma plataforma de gestão de consultas hospitalares, não um ERP.
-
-## Gotchas
-
-- Depois de alterar `lib/api-spec/openapi.yaml`, executar `pnpm --filter @workspace/api-spec run codegen` antes de validar os pacotes.
-- O gerador atual deve receber campos numéricos como `number` no OpenAPI; `integer` gera `zod.int()`, incompatível com o catálogo Zod 3.25 desta base.
 
 ## Pointers
 
