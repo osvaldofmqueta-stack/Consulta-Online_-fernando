@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Hospital de Malanje — Gestão de Consultas"
+description = "Plataforma web para gestão operacional de pacientes, consultas, fila de atendimento e acompanhamento clínico no Hospital de Malanje, sem módulos de ERP."
+version = "1.0.0"
+id = "artifacts/hospital-malanje"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21990
+
+[services.development]
+run = "pnpm --filter @workspace/hospital-malanje run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/hospital-malanje", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/hospital-malanje/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21990"
+BASE_PATH = "/"

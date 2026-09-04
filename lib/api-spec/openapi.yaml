@@ -10,6 +10,14 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: dashboard
+    description: Operational summaries
+  - name: appointments
+    description: Consultation scheduling and queue
+  - name: patients
+    description: Patient records
+  - name: directory
+    description: Hospital departments and clinicians
 paths:
   /healthz:
     get:
@@ -24,6 +32,196 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get today's consultation operations summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /appointments:
+    get:
+      operationId: listAppointments
+      tags: [appointments]
+      summary: List consultation appointments
+      parameters:
+        - name: date
+          in: query
+          schema: { type: string, format: date }
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [scheduled, confirmed, waiting, in_progress, completed, cancelled, no_show]
+        - name: departmentId
+          in: query
+          schema: { type: integer }
+        - name: search
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Appointments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Appointment"
+    post:
+      operationId: createAppointment
+      tags: [appointments]
+      summary: Schedule a consultation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentInput"
+      responses:
+        "201":
+          description: Appointment created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+  /appointments/{id}:
+    patch:
+      operationId: updateAppointment
+      tags: [appointments]
+      summary: Update consultation status or details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppointmentUpdate"
+      responses:
+        "200":
+          description: Appointment updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Appointment"
+        "404":
+          description: Appointment not found
+  /patients:
+    get:
+      operationId: listPatients
+      tags: [patients]
+      summary: Search patients
+      parameters:
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+      responses:
+        "200":
+          description: Patients
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Patient"
+    post:
+      operationId: createPatient
+      tags: [patients]
+      summary: Register a patient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatientInput"
+      responses:
+        "201":
+          description: Patient registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Patient"
+  /patients/{id}:
+    get:
+      operationId: getPatient
+      tags: [patients]
+      summary: Get patient details and consultation history
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Patient detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientDetail"
+        "404":
+          description: Patient not found
+  /departments:
+    get:
+      operationId: listDepartments
+      tags: [directory]
+      summary: List hospital consultation departments
+      responses:
+        "200":
+          description: Departments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Department"
+  /doctors:
+    get:
+      operationId: listDoctors
+      tags: [directory]
+      summary: List clinicians
+      parameters:
+        - name: departmentId
+          in: query
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Clinicians
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Doctor"
+  /activity:
+    get:
+      operationId: listActivity
+      tags: [dashboard]
+      summary: List recent operational activity
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +231,141 @@ components:
           type: string
       required:
         - status
+    Department:
+      type: object
+      required: [id, name, color, active]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        color: { type: string }
+        active: { type: boolean }
+    Doctor:
+      type: object
+      required: [id, name, specialty, departmentId, initials, active]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        specialty: { type: string }
+        departmentId: { type: integer }
+        initials: { type: string }
+        active: { type: boolean }
+    Patient:
+      type: object
+      required: [id, medicalRecordNumber, name, sex, birthDate, phone, createdAt]
+      properties:
+        id: { type: integer }
+        medicalRecordNumber: { type: string }
+        name: { type: string }
+        sex:
+          type: string
+          enum: [female, male, other]
+        birthDate: { type: string, format: date }
+        phone: { type: string }
+        neighborhood: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+    PatientInput:
+      type: object
+      required: [name, sex, birthDate, phone]
+      properties:
+        name: { type: string, minLength: 2 }
+        sex:
+          type: string
+          enum: [female, male, other]
+        birthDate: { type: string, format: date }
+        phone: { type: string }
+        neighborhood: { type: string }
+    PatientDetail:
+      allOf:
+        - $ref: "#/components/schemas/Patient"
+        - type: object
+          required: [appointments]
+          properties:
+            appointments:
+              type: array
+              items:
+                $ref: "#/components/schemas/Appointment"
+    Appointment:
+      type: object
+      required: [id, patientId, patientName, medicalRecordNumber, departmentId, departmentName, doctorId, doctorName, date, time, status, type, createdAt]
+      properties:
+        id: { type: integer }
+        patientId: { type: integer }
+        patientName: { type: string }
+        medicalRecordNumber: { type: string }
+        departmentId: { type: integer }
+        departmentName: { type: string }
+        doctorId: { type: integer }
+        doctorName: { type: string }
+        date: { type: string, format: date }
+        time: { type: string }
+        status:
+          type: string
+          enum: [scheduled, confirmed, waiting, in_progress, completed, cancelled, no_show]
+        type:
+          type: string
+          enum: [first_visit, follow_up, return]
+        notes: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+    AppointmentInput:
+      type: object
+      required: [patientId, departmentId, doctorId, date, time, type]
+      properties:
+        patientId: { type: integer }
+        departmentId: { type: integer }
+        doctorId: { type: integer }
+        date: { type: string, format: date }
+        time: { type: string }
+        type:
+          type: string
+          enum: [first_visit, follow_up, return]
+        notes: { type: string }
+    AppointmentUpdate:
+      type: object
+      properties:
+        date: { type: string, format: date }
+        time: { type: string }
+        doctorId: { type: integer }
+        status:
+          type: string
+          enum: [scheduled, confirmed, waiting, in_progress, completed, cancelled, no_show]
+        notes: { type: string }
+    DashboardSummary:
+      type: object
+      required: [date, totalAppointments, completedAppointments, waitingPatients, inProgressAppointments, cancelledAppointments, departments, nextAppointment]
+      properties:
+        date: { type: string, format: date }
+        totalAppointments: { type: integer }
+        completedAppointments: { type: integer }
+        waitingPatients: { type: integer }
+        inProgressAppointments: { type: integer }
+        cancelledAppointments: { type: integer }
+        averageWaitMinutes: { type: number }
+        departments:
+          type: array
+          items:
+            $ref: "#/components/schemas/DepartmentSummary"
+        nextAppointment:
+          anyOf:
+            - $ref: "#/components/schemas/Appointment"
+            - type: "null"
+    DepartmentSummary:
+      type: object
+      required: [departmentId, departmentName, total, completed, waiting]
+      properties:
+        departmentId: { type: integer }
+        departmentName: { type: string }
+        total: { type: integer }
+        completed: { type: integer }
+        waiting: { type: integer }
+    ActivityItem:
+      type: object
+      required: [id, type, message, timestamp]
+      properties:
+        id: { type: integer }
+        type:
+          type: string
+          enum: [appointment_created, patient_registered, status_updated, appointment_completed]
+        message: { type: string }
+        actor: { type: ["string", "null"] }
+        timestamp: { type: string, format: date-time }
 
