@@ -4,30 +4,26 @@ Plataforma web para coordenar pacientes, consultas, fila de atendimento e acompa
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- `pnpm --filter @workspace/hospital-malanje run dev` — iniciar a aplicação PHP/Tailwind
+- `pnpm --filter @workspace/hospital-malanje run build` — compilar o CSS e preparar a aplicação
+- `pnpm --filter @workspace/hospital-malanje run typecheck` — validar o legado TypeScript ainda mantido no pacote
+- Required env: `DATABASE_URL` — ligação PostgreSQL
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- PHP 8.4 com sessões PHP e PDO PostgreSQL
+- Tailwind CSS 4 compilado localmente
+- Organização MVC dentro de `artifacts/hospital-malanje`
+- PostgreSQL para contas, pacientes, consultas e mensagens
 
 ## Where things live
 
-- `artifacts/hospital-malanje/src/` — interface, shell e páginas operacionais
-- `artifacts/api-server/src/routes/hospital.ts` — endpoints do domínio hospitalar
-- `artifacts/api-server/src/lib/hospital-data.ts` — composição das respostas de consultas
-- `artifacts/api-server/src/lib/seed.ts` — dados iniciais de demonstração
-- `lib/api-spec/openapi.yaml` — contrato fonte das operações e tipos
-- `lib/db/src/schema/` — tabelas persistentes do domínio
+- `artifacts/hospital-malanje/public/index.php` — front controller da aplicação
+- `artifacts/hospital-malanje/php/app/Controllers/` — controladores MVC
+- `artifacts/hospital-malanje/php/app/Models/` — acesso aos dados
+- `artifacts/hospital-malanje/php/app/Views/` — páginas e layout
+- `artifacts/hospital-malanje/php/app/Core/` — base de dados, sessões, CSRF e renderização
+- `artifacts/hospital-malanje/public/app.css` — CSS Tailwind compilado
 
 ## Architecture decisions
 
