@@ -5,24 +5,34 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-export interface HealthStatus {
-  status: string;
+export type AuthProfileRole = typeof AuthProfileRole[keyof typeof AuthProfileRole];
+
+
+export const AuthProfileRole = {
+  patient: 'patient',
+  reception: 'reception',
+  nursing: 'nursing',
+  doctor: 'doctor',
+  coordination: 'coordination',
+} as const;
+
+export interface AuthProfile {
+  id: number;
+  role: AuthProfileRole;
+  /** @nullable */
+  displayName?: string | null;
+  /** @nullable */
+  patientId: number | null;
+  /** @nullable */
+  doctorId: number | null;
+  createdAt: string;
 }
 
-export interface Department {
-  id: number;
-  name: string;
-  color: string;
-  active: boolean;
-}
-
-export interface Doctor {
-  id: number;
-  name: string;
-  specialty: string;
-  departmentId: number;
-  initials: string;
-  active: boolean;
+export interface LinkPatientInput {
+  /** @minLength 3 */
+  medicalRecordNumber: string;
+  /** @minLength 3 */
+  phone: string;
 }
 
 export type PatientSex = typeof PatientSex[keyof typeof PatientSex];
@@ -44,24 +54,6 @@ export interface Patient {
   /** @nullable */
   neighborhood?: string | null;
   createdAt: string;
-}
-
-export type PatientInputSex = typeof PatientInputSex[keyof typeof PatientInputSex];
-
-
-export const PatientInputSex = {
-  female: 'female',
-  male: 'male',
-  other: 'other',
-} as const;
-
-export interface PatientInput {
-  /** @minLength 2 */
-  name: string;
-  sex: PatientInputSex;
-  birthDate: string;
-  phone: string;
-  neighborhood?: string;
 }
 
 export type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
@@ -102,6 +94,80 @@ export interface Appointment {
   /** @nullable */
   notes?: string | null;
   createdAt: string;
+}
+
+export interface PatientPortal {
+  profile: AuthProfile;
+  patient: Patient | null;
+  appointments: Appointment[];
+}
+
+export type PatientMessageSenderRole = typeof PatientMessageSenderRole[keyof typeof PatientMessageSenderRole];
+
+
+export const PatientMessageSenderRole = {
+  patient: 'patient',
+  doctor: 'doctor',
+  nursing: 'nursing',
+  coordination: 'coordination',
+} as const;
+
+export interface PatientMessage {
+  id: number;
+  patientId: number;
+  /** @nullable */
+  doctorId: number | null;
+  senderRole: PatientMessageSenderRole;
+  body: string;
+  createdAt: string;
+  /** @nullable */
+  readAt?: string | null;
+}
+
+export interface PatientMessageInput {
+  /**
+     * @minLength 1
+     * @maxLength 2000
+     */
+  body: string;
+}
+
+export interface HealthStatus {
+  status: string;
+}
+
+export interface Department {
+  id: number;
+  name: string;
+  color: string;
+  active: boolean;
+}
+
+export interface Doctor {
+  id: number;
+  name: string;
+  specialty: string;
+  departmentId: number;
+  initials: string;
+  active: boolean;
+}
+
+export type PatientInputSex = typeof PatientInputSex[keyof typeof PatientInputSex];
+
+
+export const PatientInputSex = {
+  female: 'female',
+  male: 'male',
+  other: 'other',
+} as const;
+
+export interface PatientInput {
+  /** @minLength 2 */
+  name: string;
+  sex: PatientInputSex;
+  birthDate: string;
+  phone: string;
+  neighborhood?: string;
 }
 
 export type PatientDetail = Patient & {

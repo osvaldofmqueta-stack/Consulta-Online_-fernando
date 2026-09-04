@@ -18,7 +18,86 @@ tags:
     description: Patient records
   - name: directory
     description: Hospital departments and clinicians
+  - name: auth
+    description: Authenticated user profiles and patient portal
 paths:
+  /auth/me:
+    get:
+      operationId: getAuthMe
+      tags: [auth]
+      summary: Get the authenticated user's hospital profile
+      responses:
+        "200":
+          description: Authenticated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthProfile"
+        "401":
+          description: Authentication required
+  /auth/link-patient:
+    post:
+      operationId: linkPatient
+      tags: [auth]
+      summary: Link an authenticated account to a patient record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LinkPatientInput"
+      responses:
+        "200":
+          description: Profile linked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthProfile"
+        "404":
+          description: Matching patient record not found
+  /auth/patient-portal:
+    get:
+      operationId: getPatientPortal
+      tags: [auth]
+      summary: Get the authenticated patient's private portal data
+      responses:
+        "200":
+          description: Patient portal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientPortal"
+  /auth/messages:
+    get:
+      operationId: listPatientMessages
+      tags: [auth]
+      summary: List secure messages for the authenticated patient
+      responses:
+        "200":
+          description: Patient messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PatientMessage"
+    post:
+      operationId: sendPatientMessage
+      tags: [auth]
+      summary: Send a secure message to the patient's attending doctor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatientMessageInput"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PatientMessage"
   /healthz:
     get:
       operationId: healthCheck
@@ -224,6 +303,52 @@ paths:
                   $ref: "#/components/schemas/ActivityItem"
 components:
   schemas:
+    AuthProfile:
+      type: object
+      required: [id, role, patientId, doctorId, createdAt]
+      properties:
+        id: { type: number }
+        role: { type: string, enum: [patient, reception, nursing, doctor, coordination] }
+        displayName: { type: ["string", "null"] }
+        patientId: { type: ["number", "null"] }
+        doctorId: { type: ["number", "null"] }
+        createdAt: { type: string, format: date-time }
+    LinkPatientInput:
+      type: object
+      required: [medicalRecordNumber, phone]
+      properties:
+        medicalRecordNumber: { type: string, minLength: 3 }
+        phone: { type: string, minLength: 3 }
+    PatientPortal:
+      type: object
+      required: [profile, patient, appointments]
+      properties:
+        profile:
+          $ref: "#/components/schemas/AuthProfile"
+        patient:
+          anyOf:
+            - $ref: "#/components/schemas/Patient"
+            - type: "null"
+        appointments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Appointment"
+    PatientMessage:
+      type: object
+      required: [id, patientId, doctorId, senderRole, body, createdAt]
+      properties:
+        id: { type: number }
+        patientId: { type: number }
+        doctorId: { type: ["number", "null"] }
+        senderRole: { type: string, enum: [patient, doctor, nursing, coordination] }
+        body: { type: string }
+        createdAt: { type: string, format: date-time }
+        readAt: { type: ["string", "null"], format: date-time }
+    PatientMessageInput:
+      type: object
+      required: [body]
+      properties:
+        body: { type: string, minLength: 1, maxLength: 2000 }
     HealthStatus:
       type: object
       properties:

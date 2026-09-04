@@ -22,3 +22,5 @@ export * from "./doctors";
 export * from "./patients";
 export * from "./appointments";
 export * from "./activity";
+export * from "./user-profiles";
+export * from "./patient-messages";

@@ -23,8 +23,11 @@ import {
   UpdateAppointmentResponse,
 } from "@workspace/api-zod";
 import { dateOnly, getAppointmentRow, insertActivity, listAppointmentRows } from "../lib/hospital-data";
+import { requireAuth, requireStaff } from "../middlewares/auth";
 
 const router: IRouter = Router();
+
+router.use(requireAuth, requireStaff);
 
 function queryString(value: unknown) {
   return typeof value === "string" ? value : undefined;

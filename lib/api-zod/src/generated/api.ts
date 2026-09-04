@@ -9,6 +9,121 @@ import * as zod from 'zod';
 
 
 /**
+ * @summary Get the authenticated user's hospital profile
+ */
+export const GetAuthMeResponse = zod.object({
+  "id": zod.number(),
+  "role": zod.enum(['patient', 'reception', 'nursing', 'doctor', 'coordination']),
+  "displayName": zod.string().nullish(),
+  "patientId": zod.number().nullable(),
+  "doctorId": zod.number().nullable(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Link an authenticated account to a patient record
+ */
+export const linkPatientBodyMedicalRecordNumberMin = 3;
+
+export const linkPatientBodyPhoneMin = 3;
+
+
+
+export const LinkPatientBody = zod.object({
+  "medicalRecordNumber": zod.string().min(linkPatientBodyMedicalRecordNumberMin),
+  "phone": zod.string().min(linkPatientBodyPhoneMin)
+})
+
+export const LinkPatientResponse = zod.object({
+  "id": zod.number(),
+  "role": zod.enum(['patient', 'reception', 'nursing', 'doctor', 'coordination']),
+  "displayName": zod.string().nullish(),
+  "patientId": zod.number().nullable(),
+  "doctorId": zod.number().nullable(),
+  "createdAt": zod.coerce.date()
+})
+
+
+/**
+ * @summary Get the authenticated patient's private portal data
+ */
+export const GetPatientPortalResponse = zod.object({
+  "profile": zod.object({
+  "id": zod.number(),
+  "role": zod.enum(['patient', 'reception', 'nursing', 'doctor', 'coordination']),
+  "displayName": zod.string().nullish(),
+  "patientId": zod.number().nullable(),
+  "doctorId": zod.number().nullable(),
+  "createdAt": zod.coerce.date()
+}),
+  "patient": zod.union([zod.object({
+  "id": zod.number(),
+  "medicalRecordNumber": zod.string(),
+  "name": zod.string(),
+  "sex": zod.enum(['female', 'male', 'other']),
+  "birthDate": zod.coerce.date(),
+  "phone": zod.string(),
+  "neighborhood": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}),zod.null()]),
+  "appointments": zod.array(zod.object({
+  "id": zod.number(),
+  "patientId": zod.number(),
+  "patientName": zod.string(),
+  "medicalRecordNumber": zod.string(),
+  "departmentId": zod.number(),
+  "departmentName": zod.string(),
+  "doctorId": zod.number(),
+  "doctorName": zod.string(),
+  "date": zod.coerce.date(),
+  "time": zod.string(),
+  "status": zod.enum(['scheduled', 'confirmed', 'waiting', 'in_progress', 'completed', 'cancelled', 'no_show']),
+  "type": zod.enum(['first_visit', 'follow_up', 'return']),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.coerce.date()
+}))
+})
+
+
+/**
+ * @summary List secure messages for the authenticated patient
+ */
+export const ListPatientMessagesResponseItem = zod.object({
+  "id": zod.number(),
+  "patientId": zod.number(),
+  "doctorId": zod.number().nullable(),
+  "senderRole": zod.enum(['patient', 'doctor', 'nursing', 'coordination']),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "readAt": zod.coerce.date().nullish()
+})
+export const ListPatientMessagesResponse = zod.array(ListPatientMessagesResponseItem)
+
+
+/**
+ * @summary Send a secure message to the patient's attending doctor
+ */
+export const sendPatientMessageBodyBodyMax = 2000;
+
+
+
+export const SendPatientMessageBody = zod.object({
+  "body": zod.string().min(1).max(sendPatientMessageBodyBodyMax)
+})
+
+export const SendPatientMessageResponse = zod.object({
+  "id": zod.number(),
+  "patientId": zod.number(),
+  "doctorId": zod.number().nullable(),
+  "senderRole": zod.enum(['patient', 'doctor', 'nursing', 'coordination']),
+  "body": zod.string(),
+  "createdAt": zod.coerce.date(),
+  "readAt": zod.coerce.date().nullish()
+})
+
+
+/**
  * Returns server health status
  * @summary Health check
  */
