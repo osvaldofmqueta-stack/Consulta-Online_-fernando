@@ -1,2 +1,3 @@
 - [API codegen compatibility](api-codegen.md) — OpenAPI integer fields currently generate unsupported `zod.int()` calls in this workspace.
 - [App Storage availability](object-storage-availability.md) — Private clinical files require App Storage; the current workspace credit budget blocks provisioning.
+- [Clinical delivery storage](delivery-architecture.md) — Clinical documents use encrypted-access PostgreSQL bytea records while App Storage is unavailable; preserve role-gated download access.

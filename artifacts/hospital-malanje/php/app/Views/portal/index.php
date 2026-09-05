@@ -3,6 +3,7 @@ $firstName = explode(' ', trim((string) $user['name']))[0] ?: 'Paciente';
 $latestAppointment = $appointments[0] ?? null;
 $lastMessage = $messages ? $messages[count($messages) - 1] : null;
 $statusLabels = [
+    'pending' => 'Pendente de confirmação',
     'scheduled' => 'Agendada',
     'waiting' => 'Em espera',
     'in_progress' => 'Em atendimento',
@@ -10,6 +11,7 @@ $statusLabels = [
     'cancelled' => 'Cancelada',
 ];
 $statusClasses = [
+    'pending' => 'bg-[#fff0dc] text-[#a85f2f]',
     'scheduled' => 'bg-[#e8f0e8] text-teal',
     'waiting' => 'bg-[#fff0dc] text-[#a85f2f]',
     'in_progress' => 'bg-[#e8eefa] text-[#5268a3]',
@@ -96,7 +98,7 @@ $typeLabels = [
                     <?php endif; ?>
                 </div>
             </div>
-            <div class="grid grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 <div class="rounded-2xl border border-[#e1d8ca] bg-white p-5">
                     <p class="text-xs text-slate-500">Consultas</p>
                     <p class="mt-3 text-3xl font-bold"><?= count($appointments) ?></p>
@@ -114,8 +116,18 @@ $typeLabels = [
                 </div>
                 <div class="rounded-2xl border border-[#e1d8ca] bg-[#fff4e7] p-5">
                     <p class="text-xs text-slate-500">Documentos</p>
-                    <p class="mt-3 text-xl font-bold">Em breve</p>
-                    <p class="mt-1 text-[11px] text-slate-500">armazenamento seguro</p>
+                    <p class="mt-3 text-3xl font-bold"><?= count($documents) ?></p>
+                    <p class="mt-1 text-[11px] text-slate-500">ficheiros privados</p>
+                </div>
+                <div class="rounded-2xl border border-[#e1d8ca] bg-white p-5">
+                    <p class="text-xs text-slate-500">Receitas</p>
+                    <p class="mt-3 text-3xl font-bold"><?= count($prescriptions) ?></p>
+                    <p class="mt-1 text-[11px] text-slate-500">prescrições activas</p>
+                </div>
+                <div class="rounded-2xl border border-[#e1d8ca] bg-white p-5">
+                    <p class="text-xs text-slate-500">Resultados</p>
+                    <p class="mt-3 text-3xl font-bold"><?= count($results) ?></p>
+                    <p class="mt-1 text-[11px] text-slate-500">resultados publicados</p>
                 </div>
             </div>
         </section>
@@ -125,13 +137,13 @@ $typeLabels = [
             <a href="#consultas" class="group rounded-xl border border-[#e1d8ca] bg-white p-4 transition hover:-translate-y-0.5 hover:border-teal"><span class="flex size-9 items-center justify-center rounded-lg bg-[#e8f0e8] text-teal">◷</span><p class="mt-3 text-sm font-bold">As consultas</p><p class="mt-1 text-xs text-slate-500 group-hover:text-teal">Ver histórico</p></a>
             <a href="#mensagens" class="group rounded-xl border border-[#e1d8ca] bg-white p-4 transition hover:-translate-y-0.5 hover:border-teal"><span class="flex size-9 items-center justify-center rounded-lg bg-[#e8eefa] text-[#5268a3]">↗</span><p class="mt-3 text-sm font-bold">Falar com a equipa</p><p class="mt-1 text-xs text-slate-500 group-hover:text-teal">Enviar mensagem</p></a>
             <a href="#perfil" class="group rounded-xl border border-[#e1d8ca] bg-white p-4 transition hover:-translate-y-0.5 hover:border-teal"><span class="flex size-9 items-center justify-center rounded-lg bg-[#fff0dc] text-[#a85f2f]">♙</span><p class="mt-3 text-sm font-bold">O meu perfil</p><p class="mt-1 text-xs text-slate-500 group-hover:text-teal">Dados pessoais</p></a>
-            <a href="#documentos" class="group rounded-xl border border-dashed border-[#d7cebf] bg-white/60 p-4 transition hover:border-teal"><span class="flex size-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500">▱</span><p class="mt-3 text-sm font-bold">Documentos</p><p class="mt-1 text-xs text-slate-500 group-hover:text-teal">Em preparação</p></a>
+            <a href="#documentos" class="group rounded-xl border border-[#d7cebf] bg-white p-4 transition hover:-translate-y-0.5 hover:border-teal"><span class="flex size-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500">▱</span><p class="mt-3 text-sm font-bold">Documentos</p><p class="mt-1 text-xs text-slate-500 group-hover:text-teal">Ver ficheiros</p></a>
         </section>
 
         <section id="marcar-consulta" class="mt-8 scroll-mt-6 overflow-hidden rounded-2xl border border-[#e1d8ca] bg-white">
             <div class="border-b border-[#e1d8ca] px-5 py-5 sm:px-6">
                 <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-                    <div><p class="font-mono-ui text-[9px] uppercase tracking-[.18em] text-teal">Novo pedido</p><h2 class="mt-1 text-lg font-bold">Marcar uma consulta</h2><p class="mt-1 text-xs text-slate-500">Escolha o serviço e um horário disponível. A equipa confirmará o pedido.</p></div>
+                    <div><p class="font-mono-ui text-[9px] uppercase tracking-[.18em] text-teal">Novo pedido</p><h2 class="mt-1 text-lg font-bold">Marcar uma consulta</h2><p class="mt-1 text-xs text-slate-500"><?= e($settings['appointment_notice'] ?? 'Escolha o serviço e um horário disponível.') ?></p></div>
                     <span class="w-fit rounded-full bg-[#e8f0e8] px-3 py-1 text-[10px] font-bold text-teal">Pedido seguro</span>
                 </div>
             </div>
@@ -169,7 +181,7 @@ $typeLabels = [
                     <input name="notes" maxlength="500" placeholder="Indique o motivo ou alguma preferência" class="mt-2 w-full rounded-lg border border-[#d7cebf] bg-[#fffdf8] px-3 py-3 text-sm outline-none focus:border-teal">
                 </label>
                 <div class="flex flex-col justify-between gap-3 sm:col-span-2 sm:flex-row sm:items-center">
-                    <p class="max-w-xl text-[11px] leading-5 text-slate-500">O pedido fica como “Agendado” e será confirmado pela equipa. Não é possível reservar o mesmo horário para o mesmo médico ou paciente.</p>
+                    <p class="max-w-xl text-[11px] leading-5 text-slate-500">O pedido fica pendente de confirmação. Não é possível reservar o mesmo horário para o mesmo médico ou paciente.</p>
                     <button class="rounded-lg bg-teal px-5 py-3 text-sm font-bold text-white hover:bg-[#185b58]">Enviar pedido</button>
                 </div>
             </form>
@@ -203,14 +215,14 @@ $typeLabels = [
                     <p class="px-6 py-12 text-center text-sm text-slate-500">Ainda não existem consultas associadas.</p>
                 <?php else: ?>
                     <div class="px-5 py-2 sm:px-6">
-                        <?php foreach (array_slice($appointments, 0, 5) as $appointment): ?>
+                        <?php foreach ($appointments as $appointment): ?>
                             <?php $status = $appointment['status']; ?>
                             <div class="relative flex gap-4 border-b border-[#eee7dc] py-5 last:border-0">
                                 <div class="relative flex w-7 shrink-0 justify-center"><span class="z-10 mt-1 flex size-3 rounded-full border-4 border-[#e8f0e8] bg-teal"></span><span class="absolute left-1/2 top-4 h-full w-px -translate-x-1/2 bg-[#e1d8ca] last:hidden"></span></div>
                                 <div class="min-w-0 flex-1">
                                     <div class="flex flex-col justify-between gap-2 sm:flex-row sm:items-start"><div><p class="text-sm font-bold"><?= e($appointment['department_name']) ?></p><p class="mt-1 text-xs text-slate-500"><?= e((new DateTimeImmutable($appointment['date']))->format('d/m/Y')) ?> às <?= e($appointment['time']) ?> · <?= e($appointment['doctor_name']) ?></p></div><span class="w-fit rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider <?= $statusClasses[$status] ?? 'bg-slate-100 text-slate-600' ?>"><?= e($statusLabels[$status] ?? $status) ?></span></div>
                                     <?php if (!empty($appointment['notes'])): ?><p class="mt-3 rounded-lg bg-[#fbf8f1] px-3 py-2 text-xs leading-5 text-slate-600"><?= e($appointment['notes']) ?></p><?php endif; ?>
-                                    <p class="mt-2 text-[10px] uppercase tracking-wider text-slate-400"><?= e($typeLabels[$appointment['type']] ?? $appointment['type']) ?></p>
+                                    <div class="mt-2 flex flex-wrap items-center justify-between gap-3"><p class="text-[10px] uppercase tracking-wider text-slate-400"><?= e($typeLabels[$appointment['type']] ?? $appointment['type']) ?></p><?php if (in_array($status, ['pending', 'scheduled'], true) && $appointment['date'] >= date('Y-m-d')): ?><form method="post"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="cancel-appointment"><input type="hidden" name="appointment_id" value="<?= (int) $appointment['id'] ?>"><button class="text-[10px] font-bold text-rose-600 hover:underline">Cancelar pedido</button></form><?php endif; ?></div>
                                 </div>
                             </div>
                         <?php endforeach; ?>
@@ -221,22 +233,29 @@ $typeLabels = [
             <div class="space-y-6">
                 <section id="perfil" class="scroll-mt-6 rounded-2xl border border-[#e1d8ca] bg-white p-5 sm:p-6">
                     <div class="flex items-center justify-between"><div><p class="font-mono-ui text-[9px] uppercase tracking-[.18em] text-teal">Dados pessoais</p><h2 class="mt-1 text-lg font-bold">O meu perfil</h2></div><span class="flex size-10 items-center justify-center rounded-full bg-[#e8f0e8] text-lg font-bold text-teal"><?= e(strtoupper(substr((string) $patient['name'], 0, 1))) ?></span></div>
-                    <div class="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 text-sm"><div><p class="text-[11px] text-slate-400">Nome</p><p class="mt-1 font-semibold"><?= e($patient['name']) ?></p></div><div><p class="text-[11px] text-slate-400">Idade</p><p class="mt-1 font-semibold"><?= age_from_date((string) $patient['birth_date']) ?> anos</p></div><div><p class="text-[11px] text-slate-400">Telefone</p><p class="mt-1 font-semibold"><?= e($patient['phone']) ?></p></div><div><p class="text-[11px] text-slate-400">Bairro</p><p class="mt-1 font-semibold"><?= e($patient['neighborhood'] ?: 'Não indicado') ?></p></div></div>
-                    <p class="mt-5 border-t border-[#eee7dc] pt-4 text-xs leading-5 text-slate-500">Precisa de actualizar estes dados? Envie uma mensagem à equipa.</p>
+                    <div class="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 text-sm"><div><p class="text-[11px] text-slate-400">Nome</p><p class="mt-1 font-semibold"><?= e($patient['name']) ?></p></div><div><p class="text-[11px] text-slate-400">Idade</p><p class="mt-1 font-semibold"><?= age_from_date((string) $patient['birth_date']) ?> anos</p></div></div>
+                    <form method="post" class="mt-5 space-y-3 border-t border-[#eee7dc] pt-4"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="update-profile"><label class="block text-[11px] font-bold text-slate-500">Telefone<input required name="phone" value="<?= e($patient['phone']) ?>" class="mt-1 w-full rounded-lg border border-[#d7cebf] bg-[#fffdf8] px-3 py-2 text-sm font-normal outline-none focus:border-teal"></label><label class="block text-[11px] font-bold text-slate-500">Bairro<input name="neighborhood" value="<?= e($patient['neighborhood']) ?>" class="mt-1 w-full rounded-lg border border-[#d7cebf] bg-[#fffdf8] px-3 py-2 text-sm font-normal outline-none focus:border-teal"></label><button class="rounded-lg border border-teal px-3 py-2 text-xs font-bold text-teal hover:bg-[#e8f0e8]">Actualizar dados</button></form>
                 </section>
 
                 <section id="mensagens" class="scroll-mt-6 overflow-hidden rounded-2xl border border-[#e1d8ca] bg-white">
                     <div class="border-b border-[#e1d8ca] px-5 py-5 sm:px-6"><p class="font-mono-ui text-[9px] uppercase tracking-[.18em] text-teal">Contacto seguro</p><h2 class="mt-1 text-lg font-bold">Falar com a equipa</h2><p class="mt-1 text-xs text-slate-500">Envie uma mensagem sobre o seu acompanhamento.</p></div>
-                    <div class="px-5 py-5 sm:px-6">
-                        <?php if ($lastMessage): ?><p class="rounded-xl bg-[#e8f0e8] px-4 py-3 text-sm leading-6 text-ink"><?= nl2br(e($lastMessage['body'])) ?></p><?php else: ?><p class="rounded-xl bg-[#fbf8f1] px-4 py-3 text-xs leading-5 text-slate-500">Ainda não iniciou uma conversa. A equipa poderá responder aqui.</p><?php endif; ?>
+                    <div class="max-h-96 space-y-3 overflow-y-auto px-5 py-5 sm:px-6">
+                        <?php if (!$messages): ?><p class="rounded-xl bg-[#fbf8f1] px-4 py-3 text-xs leading-5 text-slate-500">Ainda não iniciou uma conversa. A equipa poderá responder aqui.</p><?php else: ?><?php foreach ($messages as $message): ?><div class="<?= $message['sender_role'] === 'patient' ? 'ml-6 bg-[#e8f0e8]' : 'mr-6 bg-[#fbf8f1]' ?> rounded-xl px-4 py-3"><div class="flex justify-between gap-3 text-[10px] text-slate-400"><span><?= $message['sender_role'] === 'patient' ? 'Você' : 'Equipa do hospital' ?></span><span><?= e((new DateTimeImmutable($message['created_at']))->format('d/m/Y H:i')) ?></span></div><p class="mt-2 text-sm leading-6"><?= nl2br(e($message['body'])) ?></p></div><?php endforeach; ?><?php endif; ?>
+                    </div>
+                    <div class="px-5 pb-5 sm:px-6">
                         <form method="post" class="mt-4 space-y-3"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="message"><textarea name="body" required maxlength="2000" rows="3" placeholder="Escreva a sua mensagem…" class="w-full resize-none rounded-xl border border-[#d7cebf] bg-[#fffdf8] px-3 py-3 text-sm outline-none focus:border-teal"></textarea><button class="w-full rounded-lg bg-teal px-4 py-3 text-sm font-bold text-white hover:bg-[#185b58]">Enviar mensagem</button></form>
                     </div>
                 </section>
             </div>
         </div>
 
-        <section id="documentos" class="mt-6 scroll-mt-6 rounded-2xl border border-dashed border-[#d7cebf] bg-white/70 p-5 sm:p-6">
-            <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div class="flex gap-4"><span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#fff0dc] text-xl text-[#a85f2f]">▱</span><div><p class="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#a85f2f]">Em preparação</p><h2 class="mt-1 text-lg font-bold">Documentos, receitas e resultados</h2><p class="mt-1 max-w-2xl text-xs leading-5 text-slate-500">Esta área ficará disponível com armazenamento seguro para documentos clínicos. Os seus dados não são guardados no navegador.</p></div></div><span class="w-fit rounded-full bg-[#fff0dc] px-3 py-1 text-[10px] font-bold text-[#a85f2f]">App Storage pendente</span></div>
+        <section id="documentos" class="mt-6 scroll-mt-6 rounded-2xl border border-[#e1d8ca] bg-white p-5 sm:p-6">
+            <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-start"><div><p class="font-mono-ui text-[9px] uppercase tracking-[.18em] text-teal">Ficheiros privados</p><h2 class="mt-1 text-lg font-bold">Os seus documentos</h2><p class="mt-1 text-xs text-slate-500">Ficheiros publicados pela equipa clínica, disponíveis apenas para si.</p></div><span class="rounded-full bg-[#e8f0e8] px-3 py-1 text-[10px] font-bold text-teal"><?= count($documents) ?> ficheiros</span></div>
+            <div class="mt-5 grid gap-3 sm:grid-cols-2"><?php foreach ($documents as $document): ?><a href="<?= url('document-download', ['id' => $document['id']]) ?>" class="flex items-center justify-between rounded-xl border border-[#eee7dc] bg-[#fbf8f1] px-4 py-3 hover:border-teal"><span><strong class="block text-sm"><?= e($document['title']) ?></strong><span class="mt-1 block text-[11px] text-slate-500"><?= e($document['file_name']) ?> · <?= number_format((int) $document['file_size'] / 1024, 0) ?> KB</span></span><span class="font-bold text-teal">↓</span></a><?php endforeach; ?><?php if (!$documents): ?><p class="rounded-xl bg-[#fbf8f1] px-4 py-4 text-xs text-slate-500 sm:col-span-2">Ainda não existem documentos publicados pela equipa.</p><?php endif; ?></div>
         </section>
+        <div class="mt-6 grid gap-6 lg:grid-cols-2">
+            <section id="receitas" class="scroll-mt-6 rounded-2xl border border-[#e1d8ca] bg-white p-5 sm:p-6"><div class="flex items-start justify-between gap-3"><div><p class="font-mono-ui text-[9px] uppercase tracking-[.18em] text-teal">Prescrição clínica</p><h2 class="mt-1 text-lg font-bold">As suas receitas</h2></div><span class="rounded-full bg-[#fff0dc] px-3 py-1 text-[10px] font-bold text-[#a85f2f]"><?= count($prescriptions) ?></span></div><div class="mt-5 space-y-3"><?php foreach ($prescriptions as $prescription): ?><article class="rounded-xl bg-[#fbf8f1] px-4 py-3"><div class="flex justify-between gap-3"><p class="text-sm font-bold"><?= e($prescription['medication']) ?></p><span class="text-[10px] text-slate-400"><?= e((new DateTimeImmutable($prescription['created_at']))->format('d/m/Y')) ?></span></div><p class="mt-1 text-xs text-slate-600"><?= e($prescription['dosage']) ?> · <?= e($prescription['frequency']) ?> · <?= e($prescription['duration']) ?></p><?php if ($prescription['instructions']): ?><p class="mt-2 text-xs leading-5 text-slate-500"><?= e($prescription['instructions']) ?></p><?php endif; ?><p class="mt-2 text-[10px] text-slate-400">Prescrito por <?= e($prescription['doctor_name'] ?: 'Equipa clínica') ?></p></article><?php endforeach; ?><?php if (!$prescriptions): ?><p class="rounded-xl bg-[#fbf8f1] px-4 py-4 text-xs text-slate-500">Ainda não existem receitas publicadas.</p><?php endif; ?></div></section>
+            <section id="resultados" class="scroll-mt-6 rounded-2xl border border-[#e1d8ca] bg-white p-5 sm:p-6"><div class="flex items-start justify-between gap-3"><div><p class="font-mono-ui text-[9px] uppercase tracking-[.18em] text-teal">Acompanhamento clínico</p><h2 class="mt-1 text-lg font-bold">Resultados</h2></div><span class="rounded-full bg-[#e8eefa] px-3 py-1 text-[10px] font-bold text-[#5268a3]"><?= count($results) ?></span></div><div class="mt-5 space-y-3"><?php foreach ($results as $result): ?><article class="rounded-xl bg-[#fbf8f1] px-4 py-3"><div class="flex justify-between gap-3"><p class="text-sm font-bold"><?= e($result['title']) ?></p><span class="text-[10px] text-slate-400"><?= e((new DateTimeImmutable($result['created_at']))->format('d/m/Y')) ?></span></div><p class="mt-2 whitespace-pre-line text-xs leading-5 text-slate-600"><?= e($result['result_text']) ?></p><p class="mt-2 text-[10px] text-slate-400">Publicado por <?= e($result['doctor_name'] ?: 'Equipa clínica') ?></p></article><?php endforeach; ?><?php if (!$results): ?><p class="rounded-xl bg-[#fbf8f1] px-4 py-4 text-xs text-slate-500">Ainda não existem resultados publicados.</p><?php endif; ?></div></section>
+        </div>
     <?php endif; ?>
 </main>

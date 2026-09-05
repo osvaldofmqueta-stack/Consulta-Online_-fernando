@@ -36,7 +36,7 @@ final class AuthController
     public function login(): never
     {
         $account = Account::findByEmail((string) ($_POST['email'] ?? ''));
-        if (!$account || !password_verify((string) ($_POST['password'] ?? ''), $account['password_hash'])) {
+        if (!$account || !$account['active'] || !password_verify((string) ($_POST['password'] ?? ''), $account['password_hash'])) {
             flash('Email ou palavra-passe incorretos.');
             redirect_to(url('login'));
         }

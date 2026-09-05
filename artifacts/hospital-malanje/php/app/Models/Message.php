@@ -15,4 +15,39 @@ final class Message
         $stmt = Database::connection()->prepare('INSERT INTO patient_messages (patient_id, doctor_id, sender_clerk_user_id, sender_role, body) VALUES (?, ?, ?, ?, ?)');
         $stmt->execute([$patientId, $doctorId, 'php:' . $accountId, 'patient', $body]);
     }
+
+    public static function inbox(): array
+    {
+        return Database::connection()->query('
+            SELECT pm.*, p.name AS patient_name, p.medical_record_number, doc.name AS doctor_name
+            FROM patient_messages pm
+            JOIN patients p ON p.id = pm.patient_id
+            LEFT JOIN doctors doc ON doc.id = pm.doctor_id
+            ORDER BY pm.created_at DESC
+        ')->fetchAll();
+    }
+
+    public static function inboxForDoctor(int $doctorId): array
+    {
+        $stmt = Database::connection()->prepare('SELECT pm.*, p.name AS patient_name, p.medical_record_number, doc.name AS doctor_name FROM patient_messages pm JOIN patients p ON p.id = pm.patient_id LEFT JOIN doctors doc ON doc.id = pm.doctor_id WHERE pm.doctor_id = ? OR EXISTS (SELECT 1 FROM appointments a WHERE a.patient_id = pm.patient_id AND a.doctor_id = ?) ORDER BY pm.created_at DESC');
+        $stmt->execute([$doctorId, $doctorId]);
+        return $stmt->fetchAll();
+    }
+
+    public static function createForStaff(int $patientId, ?int $doctorId, int $accountId, string $role, string $body): void
+    {
+        $stmt = Database::connection()->prepare('INSERT INTO patient_messages (patient_id, doctor_id, sender_clerk_user_id, sender_role, body) VALUES (?, ?, ?, ?, ?)');
+        $stmt->execute([$patientId, $doctorId, 'php:' . $accountId, $role, $body]);
+    }
+
+    public static function markRead(int $messageId): void
+    {
+        $stmt = Database::connection()->prepare('UPDATE patient_messages SET read_at = NOW() WHERE id = ?');
+        $stmt->execute([$messageId]);
+    }
+
+    public static function unreadCount(): int
+    {
+        return (int) Database::connection()->query("SELECT COUNT(*) FROM patient_messages WHERE sender_role = 'patient' AND read_at IS NULL")->fetchColumn();
+    }
 }

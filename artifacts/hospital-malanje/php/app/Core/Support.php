@@ -48,3 +48,18 @@ function age_from_date(string $birthDate): int
 {
     return (int) (new DateTimeImmutable($birthDate))->diff(new DateTimeImmutable())->y;
 }
+
+function role_label(string $role): string
+{
+    return [
+        'admin' => 'Administrador',
+        'doctor' => 'Médico',
+        'receptionist' => 'Recepção',
+        'patient' => 'Paciente',
+    ][$role] ?? ucfirst($role);
+}
+
+function can_access(array $user, string $permission): bool
+{
+    return Account::roleCan((string) ($user['role'] ?? ''), $permission);
+}

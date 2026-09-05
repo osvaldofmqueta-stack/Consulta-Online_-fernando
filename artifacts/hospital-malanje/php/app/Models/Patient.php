@@ -21,4 +21,17 @@ final class Patient
     {
         return Database::connection()->query('SELECT * FROM patients ORDER BY created_at DESC')->fetchAll();
     }
+
+    public static function forDoctor(int $doctorId): array
+    {
+        $stmt = Database::connection()->prepare('SELECT DISTINCT p.* FROM patients p JOIN appointments a ON a.patient_id = p.id WHERE a.doctor_id = ? ORDER BY p.created_at DESC');
+        $stmt->execute([$doctorId]);
+        return $stmt->fetchAll();
+    }
+
+    public static function updateContact(int $patientId, string $phone, string $neighborhood): void
+    {
+        $stmt = Database::connection()->prepare('UPDATE patients SET phone = ?, neighborhood = ? WHERE id = ?');
+        $stmt->execute([$phone, $neighborhood !== '' ? $neighborhood : null, $patientId]);
+    }
 }

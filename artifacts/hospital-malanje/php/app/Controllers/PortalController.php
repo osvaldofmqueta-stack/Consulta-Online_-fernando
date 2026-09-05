@@ -31,6 +31,10 @@ final class PortalController
                 static fn (array $appointment): bool => $appointment['status'] === 'completed'
             )),
             'messages' => $patient ? Message::forPatient((int) $patient['id']) : [],
+            'documents' => $patient ? Clinical::documentsForPatient((int) $patient['id']) : [],
+            'prescriptions' => $patient ? Clinical::prescriptionsForPatient((int) $patient['id']) : [],
+            'results' => $patient ? Clinical::resultsForPatient((int) $patient['id']) : [],
+            'settings' => Clinical::settings(),
             'departments' => $patient ? Appointment::activeDepartments() : [],
             'doctors' => $patient ? Appointment::activeDoctors() : [],
             'availableTimes' => Appointment::availableTimes(),
@@ -101,10 +105,37 @@ final class PortalController
             $date,
             $time,
             $type,
-            $notes
+            $notes,
+            'pending'
         );
-        flash('Pedido de consulta enviado. A equipa irá confirmar a marcação.');
+        flash('Pedido enviado. A equipa irá confirmar a sua consulta.');
         redirect_to(url('portal') . '#consultas');
+    }
+
+    public function cancelAppointment(array $user): never
+    {
+        $appointmentId = (int) ($_POST['appointment_id'] ?? 0);
+        if ($user['patient_id'] && Appointment::cancelForPatient($appointmentId, (int) $user['patient_id'])) {
+            Audit::record((int) $user['id'], 'appointment.cancelled', 'appointment', (string) $appointmentId);
+            flash('Pedido de consulta cancelado.');
+        } else {
+            flash('Esta consulta já não pode ser cancelada.');
+        }
+        redirect_to(url('portal') . '#consultas');
+    }
+
+    public function updateProfile(array $user): never
+    {
+        $phone = trim((string) ($_POST['phone'] ?? ''));
+        $neighborhood = trim((string) ($_POST['neighborhood'] ?? ''));
+        if (!$user['patient_id'] || !$phone || mb_strlen($phone) > 40 || mb_strlen($neighborhood) > 120) {
+            flash('Indique um telefone válido.');
+            redirect_to(url('portal') . '#perfil');
+        }
+        Patient::updateContact((int) $user['patient_id'], $phone, $neighborhood);
+        Audit::record((int) $user['id'], 'patient.contact_updated', 'patient', (string) $user['patient_id']);
+        flash('Os seus dados foram actualizados.');
+        redirect_to(url('portal') . '#perfil');
     }
 
     public function sendMessage(array $user): never
@@ -120,5 +151,26 @@ final class PortalController
             flash('Mensagem enviada à equipa.');
         }
         redirect_to(url('portal'));
+    }
+
+    public function downloadDocument(array $user): never
+    {
+        $documentId = (int) ($_GET['id'] ?? 0);
+        $document = null;
+        if ($user['role'] === 'patient' && $user['patient_id']) {
+            $document = Clinical::documentForPatient($documentId, (int) $user['patient_id']);
+        } elseif (can_access($user, 'patients')) {
+            $document = Clinical::documentForStaff($documentId);
+        }
+        if (!$document) {
+            http_response_code(404);
+            exit('Documento não encontrado.');
+        }
+        Audit::record((int) $user['id'], 'document.downloaded', 'patient_document', (string) $document['id']);
+        header('Content-Type: ' . $document['mime_type']);
+        header('Content-Length: ' . $document['file_size']);
+        header('Content-Disposition: attachment; filename="' . str_replace('"', '', $document['file_name']) . '"');
+        echo $document['file_content'];
+        exit;
     }
 }
