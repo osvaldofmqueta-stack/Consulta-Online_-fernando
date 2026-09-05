@@ -3,6 +3,62 @@ declare(strict_types=1);
 
 final class Appointment
 {
+    public static function availableTimes(): array
+    {
+        return ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '14:00', '14:30', '15:00', '15:30', '16:00'];
+    }
+
+    public static function activeDepartments(): array
+    {
+        return Database::connection()
+            ->query('SELECT id, name FROM departments WHERE active = TRUE ORDER BY name')
+            ->fetchAll();
+    }
+
+    public static function activeDoctors(): array
+    {
+        return Database::connection()
+            ->query('SELECT doc.id, doc.name, doc.specialty, doc.department_id, d.name AS department_name FROM doctors doc JOIN departments d ON d.id = doc.department_id WHERE doc.active = TRUE AND d.active = TRUE ORDER BY d.name, doc.name')
+            ->fetchAll();
+    }
+
+    public static function doctorBelongsToDepartment(int $doctorId, int $departmentId): bool
+    {
+        $stmt = Database::connection()->prepare('SELECT 1 FROM doctors doc JOIN departments d ON d.id = doc.department_id WHERE doc.id = ? AND doc.department_id = ? AND doc.active = TRUE AND d.active = TRUE');
+        $stmt->execute([$doctorId, $departmentId]);
+        return (bool) $stmt->fetchColumn();
+    }
+
+    public static function slotIsAvailable(int $doctorId, string $date, string $time, int $patientId): bool
+    {
+        $stmt = Database::connection()->prepare('
+            SELECT COUNT(*)
+            FROM appointments
+            WHERE date = ?
+              AND time = ?
+              AND status <> ?
+              AND (doctor_id = ? OR patient_id = ?)
+        ');
+        $stmt->execute([$date, $time, 'cancelled', $doctorId, $patientId]);
+        return (int) $stmt->fetchColumn() === 0;
+    }
+
+    public static function createForPatient(
+        int $patientId,
+        int $departmentId,
+        int $doctorId,
+        string $date,
+        string $time,
+        string $type,
+        string $notes
+    ): void {
+        $stmt = Database::connection()->prepare('
+            INSERT INTO appointments (patient_id, department_id, doctor_id, date, time, status, type, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ');
+        $stmt->execute([$patientId, $departmentId, $doctorId, $date, $time, 'scheduled', $type, $notes !== '' ? $notes : null]);
+    }
+
     public static function forPatient(int $patientId): array
     {
         $stmt = Database::connection()->prepare('SELECT a.*, d.name AS department_name, doc.name AS doctor_name FROM appointments a JOIN departments d ON d.id = a.department_id JOIN doctors doc ON doc.id = a.doctor_id WHERE a.patient_id = ? ORDER BY a.date DESC, a.time DESC');
