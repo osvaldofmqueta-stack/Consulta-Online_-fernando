@@ -12,6 +12,7 @@ require dirname(__DIR__) . '/php/app/Models/Message.php';
 require dirname(__DIR__) . '/php/app/Models/Clinical.php';
 require dirname(__DIR__) . '/php/app/Models/Audit.php';
 require dirname(__DIR__) . '/php/app/Models/Directory.php';
+require dirname(__DIR__) . '/php/app/Services/EmailService.php';
 require dirname(__DIR__) . '/php/app/Controllers/HomeController.php';
 require dirname(__DIR__) . '/php/app/Controllers/AuthController.php';
 require dirname(__DIR__) . '/php/app/Controllers/PortalController.php';
@@ -33,10 +34,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $staff = new StaffController();
     if ($action === 'register') $auth->register();
     if ($action === 'login') $auth->login();
+    if ($action === 'request-password-reset') $auth->requestPasswordReset();
+    if ($action === 'reset-password') $auth->resetPassword();
     if ($action === 'link-patient' && $account) $portal->linkPatient($account);
     if ($action === 'book-appointment' && $account && $account['role'] === 'patient') $portal->bookAppointment($account);
     if ($action === 'cancel-appointment' && $account && $account['role'] === 'patient') $portal->cancelAppointment($account);
     if ($action === 'update-profile' && $account && $account['role'] === 'patient') $portal->updateProfile($account);
+    if ($action === 'change-password' && $account) $portal->changePassword($account);
     if ($action === 'message' && $account) $portal->sendMessage($account);
     if ($action === 'update-status' && $account && can_access($account, 'appointments')) $staff->updateStatus($account);
     if ($action === 'reply-message' && $account && can_access($account, 'messages')) $staff->replyMessage($account);
@@ -55,6 +59,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 if ($page === 'logout') (new AuthController())->logout();
 if ($page === 'login') (new AuthController())->showLogin();
 if ($page === 'register') (new AuthController())->showRegister();
+if ($page === 'forgot-password') (new AuthController())->showForgotPassword();
+if ($page === 'reset-password') (new AuthController())->showResetPassword();
 if ($page === 'portal') {
     if (!$account) redirect_to(url('login'));
     (new PortalController())->index($account);

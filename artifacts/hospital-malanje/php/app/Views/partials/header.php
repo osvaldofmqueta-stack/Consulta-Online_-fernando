@@ -1,6 +1,6 @@
 <header class="border-b border-[#e1d8ca] bg-white/80 backdrop-blur">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
         <a href="<?= url($user['role'] === 'patient' ? 'portal' : 'dashboard') ?>" class="flex items-center gap-3"><img src="/logo.svg" class="size-10 rounded-xl" alt=""><div><p class="text-sm font-bold">Hospital de Malanje</p><p class="font-mono-ui text-[9px] uppercase tracking-[.16em] text-slate-500"><?= $user['role'] === 'patient' ? 'Área do paciente' : 'Central de consultas' ?></p></div></a>
-        <div class="flex items-center gap-3"><span class="hidden text-xs text-slate-500 sm:block">Olá, <?= e($user['name']) ?></span><a href="<?= url('logout') ?>" class="rounded-lg border border-[#e1d8ca] px-3 py-2 text-xs font-bold text-slate-600 hover:text-teal">Sair</a></div>
+        <div class="flex items-center gap-3"><span class="hidden text-xs text-slate-500 sm:block">Olá, <?= e($user['name']) ?></span><?php if ($user['role'] === 'patient'): ?><a href="<?= url('portal') ?>#perfil" class="rounded-lg border border-[#d7cebf] px-3 py-2 text-xs font-bold text-teal hover:bg-[#e8f0e8]">O meu perfil</a><?php endif; ?><a href="<?= url('logout') ?>" class="rounded-lg border border-[#e1d8ca] px-3 py-2 text-xs font-bold text-slate-600 hover:text-teal">Sair</a></div>
     </div>
 </header>

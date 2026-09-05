@@ -13,6 +13,16 @@ final class AuthController
         View::render('auth/form', ['mode' => 'register'], 'Criar conta');
     }
 
+    public function showForgotPassword(): never
+    {
+        View::render('auth/form', ['mode' => 'forgot'], 'Recuperar acesso');
+    }
+
+    public function showResetPassword(): never
+    {
+        View::render('auth/form', ['mode' => 'reset', 'token' => (string) ($_GET['token'] ?? '')], 'Definir nova palavra-passe');
+    }
+
     public function register(): never
     {
         $name = trim((string) ($_POST['name'] ?? ''));
@@ -43,6 +53,36 @@ final class AuthController
         session_regenerate_id(true);
         $_SESSION['account_id'] = (int) $account['id'];
         redirect_to($account['role'] === 'patient' ? url('portal') : url('dashboard'));
+    }
+
+    public function requestPasswordReset(): never
+    {
+        $email = strtolower(trim((string) ($_POST['email'] ?? '')));
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $reset = Account::createPasswordReset($email);
+            if ($reset) {
+                $requestScheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                $requestHost = preg_replace('/[^A-Za-z0-9.\-:]/', '', (string) ($_SERVER['HTTP_HOST'] ?? 'localhost'));
+                $baseUrl = getenv('APP_URL') ?: $requestScheme . '://' . ($requestHost ?: 'localhost');
+                $resetUrl = rtrim($baseUrl, '/') . '/' . ltrim(url('reset-password', ['token' => $reset['token']]), '/');
+                EmailService::sendPasswordReset((string) $reset['account']['email'], (string) $reset['account']['name'], $resetUrl);
+            }
+        }
+        flash('Se existir uma conta activa com esse email, receberá um link de recuperação.');
+        redirect_to(url('forgot-password'));
+    }
+
+    public function resetPassword(): never
+    {
+        $token = trim((string) ($_POST['token'] ?? ''));
+        $password = (string) ($_POST['password'] ?? '');
+        $confirmation = (string) ($_POST['password_confirmation'] ?? '');
+        if (mb_strlen($password) < 8 || $password !== $confirmation || !Account::resetPassword($token, $password)) {
+            flash('O link é inválido ou expirou. Confirme as palavras-passe e tente novamente.');
+            redirect_to(url('reset-password', ['token' => $token]));
+        }
+        flash('Palavra-passe actualizada. Já pode entrar com a nova palavra-passe.');
+        redirect_to(url('login'));
     }
 
     public function logout(): never

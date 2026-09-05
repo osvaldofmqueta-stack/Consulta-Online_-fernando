@@ -138,6 +138,19 @@ final class PortalController
         redirect_to(url('portal') . '#perfil');
     }
 
+    public function changePassword(array $user): never
+    {
+        $current = (string) ($_POST['current_password'] ?? '');
+        $new = (string) ($_POST['new_password'] ?? '');
+        $confirmation = (string) ($_POST['new_password_confirmation'] ?? '');
+        if (mb_strlen($new) < 8 || $new !== $confirmation || !Account::changePassword((int) $user['id'], $current, $new)) {
+            flash('Não foi possível actualizar a palavra-passe. Confirme a actual e use pelo menos 8 caracteres.');
+            redirect_to(url('portal') . '#perfil');
+        }
+        flash('A sua palavra-passe foi actualizada.');
+        redirect_to(url('portal') . '#perfil');
+    }
+
     public function sendMessage(array $user): never
     {
         $body = trim((string) ($_POST['body'] ?? ''));

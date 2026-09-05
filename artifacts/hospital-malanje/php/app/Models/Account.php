@@ -16,6 +16,16 @@ final class Account
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
         SQL);
+        Database::connection()->exec(<<<'SQL'
+            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+                id BIGSERIAL PRIMARY KEY,
+                account_id BIGINT NOT NULL REFERENCES php_accounts(id) ON DELETE CASCADE,
+                token_hash TEXT NOT NULL UNIQUE,
+                expires_at TIMESTAMPTZ NOT NULL,
+                used_at TIMESTAMPTZ,
+                created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            )
+        SQL);
     }
 
     public static function find(int $id): ?array
@@ -79,5 +89,51 @@ final class Account
         }
         $stmt = Database::connection()->prepare('UPDATE php_accounts SET role = ?, doctor_id = ?, active = ? WHERE id = ? AND role <> ?');
         $stmt->execute([$role, $role === 'doctor' ? ($doctorId ?: null) : null, $active, $id, 'patient']);
+    }
+
+    public static function createPasswordReset(string $email): ?array
+    {
+        $account = self::findByEmail($email);
+        if (!$account || !$account['active']) {
+            return null;
+        }
+        $token = bin2hex(random_bytes(32));
+        $stmt = Database::connection()->prepare('INSERT INTO password_reset_tokens (account_id, token_hash, expires_at) VALUES (?, ?, NOW() + INTERVAL \'60 minutes\')');
+        $stmt->execute([(int) $account['id'], hash('sha256', $token)]);
+        return ['account' => $account, 'token' => $token];
+    }
+
+    public static function resetPassword(string $token, string $password): bool
+    {
+        $stmt = Database::connection()->prepare('SELECT id, account_id FROM password_reset_tokens WHERE token_hash = ? AND used_at IS NULL AND expires_at > NOW()');
+        $stmt->execute([hash('sha256', $token)]);
+        $reset = $stmt->fetch();
+        if (!$reset) {
+            return false;
+        }
+        $db = Database::connection();
+        $db->beginTransaction();
+        try {
+            $update = $db->prepare('UPDATE php_accounts SET password_hash = ? WHERE id = ? AND active = TRUE');
+            $update->execute([password_hash($password, PASSWORD_DEFAULT), (int) $reset['account_id']]);
+            $consume = $db->prepare('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = ?');
+            $consume->execute([(int) $reset['id']]);
+            $db->commit();
+            return $update->rowCount() === 1;
+        } catch (Throwable $error) {
+            $db->rollBack();
+            throw $error;
+        }
+    }
+
+    public static function changePassword(int $accountId, string $currentPassword, string $newPassword): bool
+    {
+        $account = self::find($accountId);
+        if (!$account || !password_verify($currentPassword, (string) $account['password_hash'])) {
+            return false;
+        }
+        $stmt = Database::connection()->prepare('UPDATE php_accounts SET password_hash = ? WHERE id = ?');
+        $stmt->execute([password_hash($newPassword, PASSWORD_DEFAULT), $accountId]);
+        return $stmt->rowCount() === 1;
     }
 }
