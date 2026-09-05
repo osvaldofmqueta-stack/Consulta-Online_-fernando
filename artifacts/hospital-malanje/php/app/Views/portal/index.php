@@ -120,12 +120,78 @@ $typeLabels = [
             </div>
         </section>
 
-        <section class="mt-6 grid gap-3 sm:grid-cols-4">
+        <section class="mt-6 grid gap-3 sm:grid-cols-5">
+            <a href="#marcar-consulta" class="group rounded-xl border border-[#e1d8ca] bg-white p-4 transition hover:-translate-y-0.5 hover:border-teal"><span class="flex size-9 items-center justify-center rounded-lg bg-[#fff0dc] text-[#a85f2f]">+</span><p class="mt-3 text-sm font-bold">Marcar consulta</p><p class="mt-1 text-xs text-slate-500 group-hover:text-teal">Escolher horário</p></a>
             <a href="#consultas" class="group rounded-xl border border-[#e1d8ca] bg-white p-4 transition hover:-translate-y-0.5 hover:border-teal"><span class="flex size-9 items-center justify-center rounded-lg bg-[#e8f0e8] text-teal">◷</span><p class="mt-3 text-sm font-bold">As consultas</p><p class="mt-1 text-xs text-slate-500 group-hover:text-teal">Ver histórico</p></a>
             <a href="#mensagens" class="group rounded-xl border border-[#e1d8ca] bg-white p-4 transition hover:-translate-y-0.5 hover:border-teal"><span class="flex size-9 items-center justify-center rounded-lg bg-[#e8eefa] text-[#5268a3]">↗</span><p class="mt-3 text-sm font-bold">Falar com a equipa</p><p class="mt-1 text-xs text-slate-500 group-hover:text-teal">Enviar mensagem</p></a>
             <a href="#perfil" class="group rounded-xl border border-[#e1d8ca] bg-white p-4 transition hover:-translate-y-0.5 hover:border-teal"><span class="flex size-9 items-center justify-center rounded-lg bg-[#fff0dc] text-[#a85f2f]">♙</span><p class="mt-3 text-sm font-bold">O meu perfil</p><p class="mt-1 text-xs text-slate-500 group-hover:text-teal">Dados pessoais</p></a>
             <a href="#documentos" class="group rounded-xl border border-dashed border-[#d7cebf] bg-white/60 p-4 transition hover:border-teal"><span class="flex size-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500">▱</span><p class="mt-3 text-sm font-bold">Documentos</p><p class="mt-1 text-xs text-slate-500 group-hover:text-teal">Em preparação</p></a>
         </section>
+
+        <section id="marcar-consulta" class="mt-8 scroll-mt-6 overflow-hidden rounded-2xl border border-[#e1d8ca] bg-white">
+            <div class="border-b border-[#e1d8ca] px-5 py-5 sm:px-6">
+                <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+                    <div><p class="font-mono-ui text-[9px] uppercase tracking-[.18em] text-teal">Novo pedido</p><h2 class="mt-1 text-lg font-bold">Marcar uma consulta</h2><p class="mt-1 text-xs text-slate-500">Escolha o serviço e um horário disponível. A equipa confirmará o pedido.</p></div>
+                    <span class="w-fit rounded-full bg-[#e8f0e8] px-3 py-1 text-[10px] font-bold text-teal">Pedido seguro</span>
+                </div>
+            </div>
+            <form method="post" class="grid gap-4 px-5 py-5 sm:grid-cols-2 sm:px-6">
+                <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+                <input type="hidden" name="action" value="book-appointment">
+                <label class="text-xs font-bold text-slate-500">Departamento
+                    <select id="booking-department" name="department_id" required class="mt-2 w-full rounded-lg border border-[#d7cebf] bg-[#fffdf8] px-3 py-3 text-sm outline-none focus:border-teal">
+                        <option value="">Escolha o departamento</option>
+                        <?php foreach ($departments as $department): ?><option value="<?= (int) $department['id'] ?>"><?= e($department['name']) ?></option><?php endforeach; ?>
+                    </select>
+                </label>
+                <label class="text-xs font-bold text-slate-500">Médico
+                    <select id="booking-doctor" name="doctor_id" required class="mt-2 w-full rounded-lg border border-[#d7cebf] bg-[#fffdf8] px-3 py-3 text-sm outline-none focus:border-teal">
+                        <option value="">Escolha o médico</option>
+                        <?php foreach ($doctors as $doctor): ?><option value="<?= (int) $doctor['id'] ?>" data-department="<?= (int) $doctor['department_id'] ?>"><?= e($doctor['name']) ?> · <?= e($doctor['specialty']) ?></option><?php endforeach; ?>
+                    </select>
+                </label>
+                <label class="text-xs font-bold text-slate-500">Data preferida
+                    <input type="date" name="date" min="<?= e(date('Y-m-d')) ?>" required class="mt-2 w-full rounded-lg border border-[#d7cebf] bg-[#fffdf8] px-3 py-3 text-sm outline-none focus:border-teal">
+                </label>
+                <label class="text-xs font-bold text-slate-500">Horário
+                    <select name="time" required class="mt-2 w-full rounded-lg border border-[#d7cebf] bg-[#fffdf8] px-3 py-3 text-sm outline-none focus:border-teal">
+                        <option value="">Escolha o horário</option>
+                        <?php foreach ($availableTimes as $availableTime): ?><option value="<?= e($availableTime) ?>"><?= e($availableTime) ?></option><?php endforeach; ?>
+                    </select>
+                </label>
+                <label class="text-xs font-bold text-slate-500">Tipo de consulta
+                    <select name="type" required class="mt-2 w-full rounded-lg border border-[#d7cebf] bg-[#fffdf8] px-3 py-3 text-sm outline-none focus:border-teal">
+                        <option value="first_visit">Primeira consulta</option>
+                        <option value="follow_up">Consulta de acompanhamento</option>
+                    </select>
+                </label>
+                <label class="text-xs font-bold text-slate-500">Nota para a equipa <span class="font-normal text-slate-400">(opcional)</span>
+                    <input name="notes" maxlength="500" placeholder="Indique o motivo ou alguma preferência" class="mt-2 w-full rounded-lg border border-[#d7cebf] bg-[#fffdf8] px-3 py-3 text-sm outline-none focus:border-teal">
+                </label>
+                <div class="flex flex-col justify-between gap-3 sm:col-span-2 sm:flex-row sm:items-center">
+                    <p class="max-w-xl text-[11px] leading-5 text-slate-500">O pedido fica como “Agendado” e será confirmado pela equipa. Não é possível reservar o mesmo horário para o mesmo médico ou paciente.</p>
+                    <button class="rounded-lg bg-teal px-5 py-3 text-sm font-bold text-white hover:bg-[#185b58]">Enviar pedido</button>
+                </div>
+            </form>
+        </section>
+        <script>
+            (() => {
+                const department = document.querySelector('#booking-department');
+                const doctor = document.querySelector('#booking-doctor');
+                if (!department || !doctor) return;
+                const options = Array.from(doctor.querySelectorAll('option[data-department]'));
+                const filterDoctors = () => {
+                    options.forEach((option) => {
+                        const visible = !department.value || option.dataset.department === department.value;
+                        option.hidden = !visible;
+                        option.disabled = !visible;
+                    });
+                    if (doctor.selectedOptions[0]?.disabled) doctor.value = '';
+                };
+                department.addEventListener('change', filterDoctors);
+                filterDoctors();
+            })();
+        </script>
 
         <div class="mt-8 grid gap-6 lg:grid-cols-[1.25fr_.75fr]">
             <section id="consultas" class="scroll-mt-6 overflow-hidden rounded-2xl border border-[#e1d8ca] bg-white">

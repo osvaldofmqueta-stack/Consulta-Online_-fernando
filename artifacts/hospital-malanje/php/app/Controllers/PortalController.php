@@ -7,12 +7,15 @@ final class PortalController
     {
         $patient = $user['patient_id'] ? Patient::find((int) $user['patient_id']) : null;
         $appointments = $patient ? Appointment::forPatient((int) $patient['id']) : [];
-        $today = (new DateTimeImmutable('today'))->format('Y-m-d');
+        $now = new DateTimeImmutable();
         $upcoming = array_values(array_filter(
             $appointments,
-            static fn (array $appointment): bool =>
-                $appointment['date'] >= $today
-                && !in_array($appointment['status'], ['completed', 'cancelled'], true)
+            static function (array $appointment) use ($now): bool {
+                $appointmentAt = DateTimeImmutable::createFromFormat('!Y-m-d H:i', $appointment['date'] . ' ' . $appointment['time']);
+                return $appointmentAt
+                    && $appointmentAt >= $now
+                    && !in_array($appointment['status'], ['completed', 'cancelled'], true);
+            }
         ));
         usort($upcoming, static function (array $left, array $right): int {
             return [$left['date'], $left['time']] <=> [$right['date'], $right['time']];
@@ -63,13 +66,16 @@ final class PortalController
         $type = (string) ($_POST['type'] ?? '');
         $notes = trim((string) ($_POST['notes'] ?? ''));
         $dateValue = DateTimeImmutable::createFromFormat('!Y-m-d', $date);
+        $appointmentAt = DateTimeImmutable::createFromFormat('!Y-m-d H:i', $date . ' ' . $time);
+        $now = new DateTimeImmutable();
 
         if (
             !$departmentId
             || !$doctorId
             || !$dateValue
             || $dateValue->format('Y-m-d') !== $date
-            || $dateValue < new DateTimeImmutable('today')
+            || !$appointmentAt
+            || $appointmentAt <= $now
             || !in_array($time, Appointment::availableTimes(), true)
             || !in_array($type, ['first_visit', 'follow_up'], true)
             || mb_strlen($notes) > 500

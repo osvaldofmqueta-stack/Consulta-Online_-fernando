@@ -31,6 +31,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'register') $auth->register();
     if ($action === 'login') $auth->login();
     if ($action === 'link-patient' && $account) $portal->linkPatient($account);
+    if ($action === 'book-appointment' && $account && $account['role'] === 'patient') $portal->bookAppointment($account);
     if ($action === 'message' && $account) $portal->sendMessage($account);
     if ($action === 'update-status' && $account && $account['role'] !== 'patient') $staff->updateStatus($account);
 }
