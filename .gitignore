@@ -47,3 +47,6 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Local Windows installation credentials
+artifacts/hospital-malanje/php/config.local.php

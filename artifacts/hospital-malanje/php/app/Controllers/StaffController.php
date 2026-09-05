@@ -186,11 +186,11 @@ final class StaffController
         $from = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($_GET['from'] ?? '')) ? (string) $_GET['from'] : (new DateTimeImmutable('-30 days'))->format('Y-m-d');
         $to = preg_match('/^\d{4}-\d{2}-\d{2}$/', (string) ($_GET['to'] ?? '')) ? (string) $_GET['to'] : (new DateTimeImmutable())->format('Y-m-d');
         $db = Database::connection();
-        $summaryStmt = $db->prepare('SELECT COUNT(*) AS total, COUNT(*) FILTER (WHERE status = \'completed\') AS completed, COUNT(*) FILTER (WHERE status = \'cancelled\') AS cancelled, COUNT(DISTINCT patient_id) AS patients FROM appointments WHERE date BETWEEN ? AND ?');
+        $summaryStmt = $db->prepare('SELECT COUNT(*) AS total, SUM(CASE WHEN status = \'completed\' THEN 1 ELSE 0 END) AS completed, SUM(CASE WHEN status = \'cancelled\' THEN 1 ELSE 0 END) AS cancelled, COUNT(DISTINCT patient_id) AS patients FROM consultas WHERE date BETWEEN ? AND ?');
         $summaryStmt->execute([$from, $to]);
-        $byDepartment = $db->prepare('SELECT d.name, COUNT(*) AS total FROM appointments a JOIN departments d ON d.id = a.department_id WHERE a.date BETWEEN ? AND ? GROUP BY d.name ORDER BY total DESC');
+        $byDepartment = $db->prepare('SELECT d.name, COUNT(*) AS total FROM consultas a JOIN departamentos d ON d.id = a.department_id WHERE a.date BETWEEN ? AND ? GROUP BY d.name ORDER BY total DESC');
         $byDepartment->execute([$from, $to]);
-        $byStatus = $db->prepare('SELECT status, COUNT(*) AS total FROM appointments WHERE date BETWEEN ? AND ? GROUP BY status ORDER BY total DESC');
+        $byStatus = $db->prepare('SELECT status, COUNT(*) AS total FROM consultas WHERE date BETWEEN ? AND ? GROUP BY status ORDER BY total DESC');
         $byStatus->execute([$from, $to]);
         View::render('staff/reports', [
             'user' => $user,

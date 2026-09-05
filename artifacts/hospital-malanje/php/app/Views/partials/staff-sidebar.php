@@ -11,7 +11,7 @@ if (can_access($user, 'settings')) $items['directory'] = ['Médicos e serviços'
 ?>
 <aside class="hidden w-64 shrink-0 bg-[#184b49] text-[#f8f4e9] md:block">
     <div class="flex h-full min-h-screen flex-col p-5">
-        <a href="<?= url('dashboard') ?>" class="flex items-center gap-3 border-b border-white/10 pb-6"><img src="/logo.svg" class="size-9 rounded-xl" alt=""><div><p class="text-sm font-bold">Hospital de Malanje</p><p class="font-mono-ui text-[8px] uppercase tracking-[.14em] text-white/50">Gestão de consultas</p></div></a>
+        <a href="<?= url('dashboard') ?>" class="flex items-center gap-3 border-b border-white/10 pb-6"><img src="<?= e(asset_url('logo.svg')) ?>" class="size-9 rounded-xl" alt=""><div><p class="text-sm font-bold">Hospital de Malanje</p><p class="font-mono-ui text-[8px] uppercase tracking-[.14em] text-white/50">Gestão de consultas</p></div></a>
         <p class="mb-2 mt-8 px-2 font-mono-ui text-[9px] uppercase tracking-[.18em] text-white/45">Operação</p>
         <nav class="space-y-1">
             <?php foreach ($items as $key => [$label, $icon, $permission]): ?>

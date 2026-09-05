@@ -7,7 +7,7 @@ final class Clinical
     {
         $stmt = Database::connection()->prepare('
             SELECT id, patient_id, title, category, file_name, mime_type, file_size, created_at
-            FROM patient_documents
+            FROM documentos_pacientes
             WHERE patient_id = ?
             ORDER BY created_at DESC
         ');
@@ -17,14 +17,14 @@ final class Clinical
 
     public static function documentForPatient(int $documentId, int $patientId): ?array
     {
-        $stmt = Database::connection()->prepare('SELECT * FROM patient_documents WHERE id = ? AND patient_id = ?');
+        $stmt = Database::connection()->prepare('SELECT * FROM documentos_pacientes WHERE id = ? AND patient_id = ?');
         $stmt->execute([$documentId, $patientId]);
         return $stmt->fetch() ?: null;
     }
 
     public static function documentForStaff(int $documentId): ?array
     {
-        $stmt = Database::connection()->prepare('SELECT * FROM patient_documents WHERE id = ?');
+        $stmt = Database::connection()->prepare('SELECT * FROM documentos_pacientes WHERE id = ?');
         $stmt->execute([$documentId]);
         return $stmt->fetch() ?: null;
     }
@@ -40,7 +40,7 @@ final class Clinical
         string $content
     ): void {
         $stmt = Database::connection()->prepare('
-            INSERT INTO patient_documents
+            INSERT INTO documentos_pacientes
                 (patient_id, uploaded_by_account_id, title, category, file_name, mime_type, file_size, file_content)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ');
@@ -59,8 +59,8 @@ final class Clinical
     {
         $stmt = Database::connection()->prepare('
             SELECT pp.*, doc.name AS doctor_name
-            FROM patient_prescriptions pp
-            LEFT JOIN doctors doc ON doc.id = pp.doctor_id
+            FROM receitas_pacientes pp
+            LEFT JOIN medicos doc ON doc.id = pp.doctor_id
             WHERE pp.patient_id = ?
             ORDER BY pp.created_at DESC
         ');
@@ -79,7 +79,7 @@ final class Clinical
         string $instructions
     ): void {
         $stmt = Database::connection()->prepare('
-            INSERT INTO patient_prescriptions
+            INSERT INTO receitas_pacientes
                 (patient_id, doctor_id, appointment_id, medication, dosage, frequency, duration, instructions)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ');
@@ -99,8 +99,8 @@ final class Clinical
     {
         $stmt = Database::connection()->prepare('
             SELECT pr.*, doc.name AS doctor_name
-            FROM patient_results pr
-            LEFT JOIN doctors doc ON doc.id = pr.doctor_id
+            FROM resultados_pacientes pr
+            LEFT JOIN medicos doc ON doc.id = pr.doctor_id
             WHERE pr.patient_id = ?
             ORDER BY pr.created_at DESC
         ');
@@ -116,7 +116,7 @@ final class Clinical
         string $resultText
     ): void {
         $stmt = Database::connection()->prepare('
-            INSERT INTO patient_results
+            INSERT INTO resultados_pacientes
                 (patient_id, doctor_id, appointment_id, title, result_text)
             VALUES (?, ?, ?, ?, ?)
         ');
@@ -131,7 +131,7 @@ final class Clinical
 
     public static function settings(): array
     {
-        $rows = Database::connection()->query('SELECT setting_key, setting_value FROM hospital_settings ORDER BY setting_key')->fetchAll();
+        $rows = Database::connection()->query('SELECT setting_key, setting_value FROM definicoes_hospital ORDER BY setting_key')->fetchAll();
         $settings = [];
         foreach ($rows as $row) {
             $settings[$row['setting_key']] = $row['setting_value'];
@@ -141,10 +141,13 @@ final class Clinical
 
     public static function saveSetting(string $key, string $value): void
     {
+        $upsert = Database::driver() === 'mysql'
+            ? 'ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()'
+            : 'ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = NOW()';
         $stmt = Database::connection()->prepare('
-            INSERT INTO hospital_settings (setting_key, setting_value, updated_at)
+            INSERT INTO definicoes_hospital (setting_key, setting_value, updated_at)
             VALUES (?, ?, NOW())
-            ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value, updated_at = NOW()
+            ' . $upsert . '
         ');
         $stmt->execute([$key, $value]);
     }

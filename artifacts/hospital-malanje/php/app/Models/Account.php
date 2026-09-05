@@ -5,21 +5,53 @@ final class Account
 {
     public static function ensureSchema(): void
     {
+        if (Database::driver() === 'mysql') {
+            Database::connection()->exec(<<<'SQL'
+                CREATE TABLE IF NOT EXISTS contas (
+                    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    name VARCHAR(190) NOT NULL,
+                    email VARCHAR(190) NOT NULL UNIQUE,
+                    password_hash VARCHAR(255) NOT NULL,
+                    role VARCHAR(30) NOT NULL DEFAULT 'patient',
+                    patient_id INT NULL,
+                    doctor_id INT NULL,
+                    active TINYINT(1) NOT NULL DEFAULT 1,
+                    phone VARCHAR(40) NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            SQL);
+            Database::connection()->exec(<<<'SQL'
+                CREATE TABLE IF NOT EXISTS tokens_recuperacao (
+                    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+                    account_id BIGINT UNSIGNED NOT NULL,
+                    token_hash CHAR(64) NOT NULL UNIQUE,
+                    expires_at DATETIME NOT NULL,
+                    used_at DATETIME NULL,
+                    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    CONSTRAINT fk_tokens_contas FOREIGN KEY (account_id) REFERENCES contas(id) ON DELETE CASCADE
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            SQL);
+            return;
+        }
+
         Database::connection()->exec(<<<'SQL'
-            CREATE TABLE IF NOT EXISTS php_accounts (
+            CREATE TABLE IF NOT EXISTS contas (
                 id BIGSERIAL PRIMARY KEY,
                 name TEXT NOT NULL,
                 email TEXT NOT NULL UNIQUE,
                 password_hash TEXT NOT NULL,
                 role TEXT NOT NULL DEFAULT 'patient',
                 patient_id INTEGER,
+                doctor_id INTEGER,
+                active BOOLEAN NOT NULL DEFAULT TRUE,
+                phone TEXT,
                 created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
             )
         SQL);
         Database::connection()->exec(<<<'SQL'
-            CREATE TABLE IF NOT EXISTS password_reset_tokens (
+            CREATE TABLE IF NOT EXISTS tokens_recuperacao (
                 id BIGSERIAL PRIMARY KEY,
-                account_id BIGINT NOT NULL REFERENCES php_accounts(id) ON DELETE CASCADE,
+                account_id BIGINT NOT NULL REFERENCES contas(id) ON DELETE CASCADE,
                 token_hash TEXT NOT NULL UNIQUE,
                 expires_at TIMESTAMPTZ NOT NULL,
                 used_at TIMESTAMPTZ,
@@ -30,23 +62,25 @@ final class Account
 
     public static function find(int $id): ?array
     {
-        $stmt = Database::connection()->prepare('SELECT * FROM php_accounts WHERE id = ?');
+        $stmt = Database::connection()->prepare('SELECT * FROM contas WHERE id = ?');
         $stmt->execute([$id]);
         return $stmt->fetch() ?: null;
     }
 
     public static function findByEmail(string $email): ?array
     {
-        $stmt = Database::connection()->prepare('SELECT * FROM php_accounts WHERE email = ?');
+        $stmt = Database::connection()->prepare('SELECT * FROM contas WHERE email = ?');
         $stmt->execute([strtolower(trim($email))]);
         return $stmt->fetch() ?: null;
     }
 
     public static function create(string $name, string $email, string $password): int
     {
-        $stmt = Database::connection()->prepare('INSERT INTO php_accounts (name, email, password_hash) VALUES (?, ?, ?) RETURNING id');
+        $stmt = Database::connection()->prepare('INSERT INTO contas (name, email, password_hash) VALUES (?, ?, ?)');
         $stmt->execute([trim($name), strtolower(trim($email)), password_hash($password, PASSWORD_DEFAULT)]);
-        return (int) $stmt->fetchColumn();
+        return Database::driver() === 'mysql'
+            ? (int) Database::connection()->lastInsertId()
+            : (int) Database::connection()->query('SELECT LASTVAL()')->fetchColumn();
     }
 
     public static function createStaff(string $name, string $email, string $password, string $role, ?int $doctorId = null): int
@@ -54,14 +88,16 @@ final class Account
         if (!in_array($role, ['admin', 'doctor', 'receptionist'], true)) {
             throw new InvalidArgumentException('Papel inválido.');
         }
-        $stmt = Database::connection()->prepare('INSERT INTO php_accounts (name, email, password_hash, role, doctor_id, active) VALUES (?, ?, ?, ?, ?, TRUE) RETURNING id');
+        $stmt = Database::connection()->prepare('INSERT INTO contas (name, email, password_hash, role, doctor_id, active) VALUES (?, ?, ?, ?, ?, ' . (Database::driver() === 'mysql' ? '1' : 'TRUE') . ')');
         $stmt->execute([trim($name), strtolower(trim($email)), password_hash($password, PASSWORD_DEFAULT), $role, $role === 'doctor' ? ($doctorId ?: null) : null]);
-        return (int) $stmt->fetchColumn();
+        return Database::driver() === 'mysql'
+            ? (int) Database::connection()->lastInsertId()
+            : (int) Database::connection()->query('SELECT LASTVAL()')->fetchColumn();
     }
 
     public static function linkPatient(int $accountId, int $patientId): void
     {
-        $stmt = Database::connection()->prepare('UPDATE php_accounts SET patient_id = ? WHERE id = ?');
+        $stmt = Database::connection()->prepare('UPDATE contas SET patient_id = ? WHERE id = ?');
         $stmt->execute([$patientId, $accountId]);
     }
 
@@ -78,7 +114,7 @@ final class Account
 
     public static function allStaff(): array
     {
-        return Database::connection()->query("SELECT id, name, email, role, doctor_id, active, created_at FROM php_accounts WHERE role <> 'patient' ORDER BY name")->fetchAll();
+        return Database::connection()->query("SELECT id, name, email, role, doctor_id, active, created_at FROM contas WHERE role <> 'patient' ORDER BY name")->fetchAll();
     }
 
     public static function updateStaff(int $id, string $role, bool $active, ?int $doctorId = null): void
@@ -87,7 +123,7 @@ final class Account
         if (!in_array($role, $allowed, true)) {
             return;
         }
-        $stmt = Database::connection()->prepare('UPDATE php_accounts SET role = ?, doctor_id = ?, active = ? WHERE id = ? AND role <> ?');
+        $stmt = Database::connection()->prepare('UPDATE contas SET role = ?, doctor_id = ?, active = ? WHERE id = ? AND role <> ?');
         $stmt->execute([$role, $role === 'doctor' ? ($doctorId ?: null) : null, $active, $id, 'patient']);
     }
 
@@ -98,14 +134,17 @@ final class Account
             return null;
         }
         $token = bin2hex(random_bytes(32));
-        $stmt = Database::connection()->prepare('INSERT INTO password_reset_tokens (account_id, token_hash, expires_at) VALUES (?, ?, NOW() + INTERVAL \'60 minutes\')');
+        $expires = Database::driver() === 'mysql'
+            ? 'DATE_ADD(NOW(), INTERVAL 60 MINUTE)'
+            : "NOW() + INTERVAL '60 minutes'";
+        $stmt = Database::connection()->prepare("INSERT INTO tokens_recuperacao (account_id, token_hash, expires_at) VALUES (?, ?, $expires)");
         $stmt->execute([(int) $account['id'], hash('sha256', $token)]);
         return ['account' => $account, 'token' => $token];
     }
 
     public static function resetPassword(string $token, string $password): bool
     {
-        $stmt = Database::connection()->prepare('SELECT id, account_id FROM password_reset_tokens WHERE token_hash = ? AND used_at IS NULL AND expires_at > NOW()');
+        $stmt = Database::connection()->prepare('SELECT id, account_id FROM tokens_recuperacao WHERE token_hash = ? AND used_at IS NULL AND expires_at > NOW()');
         $stmt->execute([hash('sha256', $token)]);
         $reset = $stmt->fetch();
         if (!$reset) {
@@ -114,9 +153,9 @@ final class Account
         $db = Database::connection();
         $db->beginTransaction();
         try {
-            $update = $db->prepare('UPDATE php_accounts SET password_hash = ? WHERE id = ? AND active = TRUE');
+            $update = $db->prepare('UPDATE contas SET password_hash = ? WHERE id = ? AND active = ' . (Database::driver() === 'mysql' ? '1' : 'TRUE'));
             $update->execute([password_hash($password, PASSWORD_DEFAULT), (int) $reset['account_id']]);
-            $consume = $db->prepare('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = ?');
+            $consume = $db->prepare('UPDATE tokens_recuperacao SET used_at = NOW() WHERE id = ?');
             $consume->execute([(int) $reset['id']]);
             $db->commit();
             return $update->rowCount() === 1;
@@ -132,7 +171,7 @@ final class Account
         if (!$account || !password_verify($currentPassword, (string) $account['password_hash'])) {
             return false;
         }
-        $stmt = Database::connection()->prepare('UPDATE php_accounts SET password_hash = ? WHERE id = ?');
+        $stmt = Database::connection()->prepare('UPDATE contas SET password_hash = ? WHERE id = ?');
         $stmt->execute([password_hash($newPassword, PASSWORD_DEFAULT), $accountId]);
         return $stmt->rowCount() === 1;
     }

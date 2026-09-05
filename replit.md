@@ -6,14 +6,15 @@ Plataforma web para coordenar pacientes, consultas, fila de atendimento e acompa
 
 - `pnpm --filter @workspace/hospital-malanje run dev` — iniciar a aplicação PHP/Tailwind
 - `pnpm --filter @workspace/hospital-malanje run build` — compilar o CSS e preparar a aplicação
-- Required env: `DATABASE_URL` — ligação PostgreSQL
+- Instalação Windows: executar `instalar.bat`; usa MySQL/MariaDB do XAMPP ou WAMP e cria `php/config.local.php`.
+- O ambiente Replit mantém compatibilidade de desenvolvimento através de `DATABASE_URL` quando não existe configuração local.
 
 ## Stack
 
 - PHP 8.4 com sessões PHP e PDO PostgreSQL
 - Tailwind CSS 4 compilado localmente
 - Organização MVC dentro de `artifacts/hospital-malanje`
-- PostgreSQL para contas, pacientes, consultas e mensagens
+- MySQL/MariaDB para contas, pacientes, consultas, documentos e mensagens na instalação local
 
 ## Where things live
 

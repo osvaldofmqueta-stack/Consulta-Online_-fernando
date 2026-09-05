@@ -6,6 +6,13 @@ function e(?string $value): string
     return htmlspecialchars($value ?? '', ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
+function asset_url(string $asset): string
+{
+    $script = str_replace('\\', '/', (string) ($_SERVER['SCRIPT_NAME'] ?? ''));
+    $base = rtrim(dirname($script), '/.');
+    return ($base === '' ? '' : $base) . '/' . ltrim($asset, '/');
+}
+
 function url(string $page = 'home', array $params = []): string
 {
     return '?' . http_build_query(array_merge(['page' => $page], $params));
