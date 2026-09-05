@@ -12,7 +12,6 @@ require dirname(__DIR__) . '/php/app/Models/Message.php';
 require dirname(__DIR__) . '/php/app/Models/Clinical.php';
 require dirname(__DIR__) . '/php/app/Models/Audit.php';
 require dirname(__DIR__) . '/php/app/Models/Directory.php';
-require dirname(__DIR__) . '/php/app/Services/EmailService.php';
 require dirname(__DIR__) . '/php/app/Controllers/HomeController.php';
 require dirname(__DIR__) . '/php/app/Controllers/AuthController.php';
 require dirname(__DIR__) . '/php/app/Controllers/PortalController.php';

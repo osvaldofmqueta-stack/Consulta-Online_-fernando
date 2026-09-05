@@ -15,7 +15,9 @@ final class AuthController
 
     public function showForgotPassword(): never
     {
-        View::render('auth/form', ['mode' => 'forgot'], 'Recuperar acesso');
+        $localResetUrl = $_SESSION['local_reset_url'] ?? null;
+        unset($_SESSION['local_reset_url']);
+        View::render('auth/form', ['mode' => 'forgot', 'localResetUrl' => $localResetUrl], 'Recuperar acesso');
     }
 
     public function showResetPassword(): never
@@ -61,14 +63,10 @@ final class AuthController
         if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $reset = Account::createPasswordReset($email);
             if ($reset) {
-                $requestScheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-                $requestHost = preg_replace('/[^A-Za-z0-9.\-:]/', '', (string) ($_SERVER['HTTP_HOST'] ?? 'localhost'));
-                $baseUrl = getenv('APP_URL') ?: $requestScheme . '://' . ($requestHost ?: 'localhost');
-                $resetUrl = rtrim($baseUrl, '/') . '/' . ltrim(url('reset-password', ['token' => $reset['token']]), '/');
-                EmailService::sendPasswordReset((string) $reset['account']['email'], (string) $reset['account']['name'], $resetUrl);
+                $_SESSION['local_reset_url'] = url('reset-password', ['token' => $reset['token']]);
             }
         }
-        flash('Se existir uma conta activa com esse email, receberá um link de recuperação.');
+        flash('Se existir uma conta activa com esse email, será gerado um link local de recuperação.');
         redirect_to(url('forgot-password'));
     }
 
