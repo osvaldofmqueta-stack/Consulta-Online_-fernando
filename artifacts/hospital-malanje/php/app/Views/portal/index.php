@@ -1,4 +1,176 @@
+<?php
+$firstName = explode(' ', trim((string) $user['name']))[0] ?: 'Paciente';
+$latestAppointment = $appointments[0] ?? null;
+$lastMessage = $messages ? $messages[count($messages) - 1] : null;
+$statusLabels = [
+    'scheduled' => 'Agendada',
+    'waiting' => 'Em espera',
+    'in_progress' => 'Em atendimento',
+    'completed' => 'Concluída',
+    'cancelled' => 'Cancelada',
+];
+$statusClasses = [
+    'scheduled' => 'bg-[#e8f0e8] text-teal',
+    'waiting' => 'bg-[#fff0dc] text-[#a85f2f]',
+    'in_progress' => 'bg-[#e8eefa] text-[#5268a3]',
+    'completed' => 'bg-slate-100 text-slate-600',
+    'cancelled' => 'bg-rose-50 text-rose-700',
+];
+$typeLabels = [
+    'first_visit' => 'Primeira consulta',
+    'follow_up' => 'Consulta de acompanhamento',
+];
+?>
 <?php require __DIR__ . '/../partials/header.php'; ?>
-<main class="noise mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-12"><p class="font-mono-ui text-[10px] uppercase tracking-[.18em] text-teal">Portal privado</p><h1 class="mt-2 text-3xl font-bold tracking-[-.04em]">O seu acompanhamento</h1><p class="mt-2 text-sm text-slate-500">Consulte as suas consultas e mantenha o contacto com a equipa.</p>
-<?php if (!$patient): ?><section class="mt-8 grid gap-5 lg:grid-cols-[1fr_.8fr]"><div class="rounded-2xl border border-[#e1d8ca] bg-white p-6 shadow-soft sm:p-8"><div class="flex size-11 items-center justify-center rounded-xl bg-[#e8f0e8] text-teal">↗</div><h2 class="mt-5 text-xl font-bold">Ligue o seu registo clínico</h2><p class="mt-2 text-sm leading-6 text-slate-500">Confirme o número do processo e o telefone registado no hospital para consultar o seu histórico.</p><form method="post" class="mt-6 space-y-4"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="link-patient"><label class="block text-xs font-bold uppercase tracking-wider text-slate-500">Número do processo<input required name="medical_record_number" placeholder="HM-2026-00142" class="mt-2 w-full rounded-lg border border-[#d7cebf] bg-[#fffdf8] px-3 py-3 text-sm outline-none focus:border-teal"></label><label class="block text-xs font-bold uppercase tracking-wider text-slate-500">Telefone registado<input required name="phone" placeholder="923 441 802" class="mt-2 w-full rounded-lg border border-[#d7cebf] bg-[#fffdf8] px-3 py-3 text-sm outline-none focus:border-teal"></label><button class="w-full rounded-lg bg-teal px-4 py-3 text-sm font-bold text-white hover:bg-[#185b58]">Ligar o meu registo</button></form></div><div class="rounded-2xl border border-[#e1d8ca] bg-[#e8f0e8]/60 p-6 sm:p-8"><p class="font-mono-ui text-[10px] uppercase tracking-wider text-teal">Acesso protegido</p><h2 class="mt-4 text-lg font-bold">Os seus dados ficam privados</h2><p class="mt-2 text-sm leading-6 text-slate-500">A sua conta é separada da consola hospitalar e só mostra o registo clínico que confirmar.</p></div></section>
-<?php else: ?><section class="mt-8 grid gap-4 sm:grid-cols-3"><div class="rounded-xl border border-[#e1d8ca] bg-white p-5"><p class="text-xs text-slate-500">Paciente</p><p class="mt-2 font-bold"><?= e($patient['name']) ?></p><p class="mt-1 font-mono-ui text-[10px] text-slate-500"><?= e($patient['medical_record_number']) ?></p></div><div class="rounded-xl border border-[#e1d8ca] bg-white p-5"><p class="text-xs text-slate-500">Consultas</p><p class="mt-2 text-2xl font-bold"><?= count($appointments) ?></p></div><div class="rounded-xl border border-[#e1d8ca] bg-white p-5"><p class="text-xs text-slate-500">Documentos</p><p class="mt-2 font-bold">Em breve</p><p class="mt-1 text-xs text-slate-500">App Storage pendente</p></div></section><section class="mt-6 overflow-hidden rounded-xl border border-[#e1d8ca] bg-white"><div class="border-b border-[#e1d8ca] px-5 py-4"><h2 class="text-sm font-bold">As suas consultas</h2><p class="mt-1 text-xs text-slate-500">Histórico de marcações</p></div><?php if (!$appointments): ?><p class="px-5 py-10 text-center text-sm text-slate-500">Ainda não existem consultas associadas.</p><?php else: ?><?php foreach ($appointments as $appointment): ?><div class="flex flex-col gap-2 border-b border-[#eee7dc] px-5 py-4 last:border-0 sm:flex-row sm:items-center sm:justify-between"><div><p class="text-sm font-bold"><?= e($appointment['department_name']) ?></p><p class="mt-1 text-xs text-slate-500"><?= e((new DateTimeImmutable($appointment['date']))->format('d/m/Y')) ?> às <?= e($appointment['time']) ?> · <?= e($appointment['doctor_name']) ?></p></div><span class="w-fit rounded-full bg-[#e8f0e8] px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-teal"><?= e($appointment['status']) ?></span></div><?php endforeach; ?><?php endif; ?></section><section class="mt-6 overflow-hidden rounded-xl border border-[#e1d8ca] bg-white"><div class="border-b border-[#e1d8ca] px-5 py-4"><h2 class="text-sm font-bold">Falar com a equipa</h2><p class="mt-1 text-xs text-slate-500">Envie uma mensagem segura sobre o seu acompanhamento.</p></div><div class="max-h-80 space-y-3 overflow-y-auto px-5 py-5"><?php if (!$messages): ?><p class="py-6 text-center text-sm text-slate-500">Ainda não há mensagens. Escreva abaixo para iniciar.</p><?php else: ?><?php foreach ($messages as $message): ?><div class="<?= $message['sender_role'] === 'patient' ? 'text-right' : 'text-left' ?>"><div class="<?= $message['sender_role'] === 'patient' ? 'bg-teal text-white' : 'bg-[#e8f0e8] text-ink' ?> inline-block max-w-[85%] rounded-2xl px-4 py-3 text-left text-sm"><p><?= nl2br(e($message['body'])) ?></p><p class="mt-2 text-[10px] opacity-60"><?= e((new DateTimeImmutable($message['created_at']))->format('d/m H:i')) ?></p></div></div><?php endforeach; ?><?php endif; ?></div><form method="post" class="flex gap-2 border-t border-[#e1d8ca] p-4"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="message"><input name="body" required maxlength="2000" placeholder="Escreva a sua mensagem…" class="min-w-0 flex-1 rounded-lg border border-[#d7cebf] bg-[#fffdf8] px-3 py-3 text-sm outline-none focus:border-teal"><button class="rounded-lg bg-teal px-4 py-3 text-sm font-bold text-white hover:bg-[#185b58]">Enviar</button></form></section><div class="mt-6 grid gap-4 sm:grid-cols-2"><div class="rounded-xl border border-dashed border-[#d7cebf] bg-white/60 p-5"><p class="font-bold">Documentos e receitas</p><p class="mt-2 text-xs leading-5 text-slate-500">A área está preparada para receber receitas e resultados assim que o App Storage estiver disponível.</p></div><div class="rounded-xl border border-dashed border-[#d7cebf] bg-white/60 p-5"><p class="font-bold">Contacto seguro</p><p class="mt-2 text-xs leading-5 text-slate-500">As mensagens ficam associadas ao seu registo clínico.</p></div></div><?php endif; ?></main>
+<main class="noise mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12">
+    <?php if (!$patient): ?>
+        <div class="mb-8">
+            <p class="font-mono-ui text-[10px] uppercase tracking-[.18em] text-teal">Primeiro acesso</p>
+            <h1 class="mt-2 text-3xl font-bold tracking-[-.04em]">Vamos ligar o seu acompanhamento</h1>
+            <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-500">Confirme o seu processo clínico para desbloquear consultas, mensagens e informação pessoal.</p>
+        </div>
+        <section class="grid gap-5 lg:grid-cols-[1fr_.8fr]">
+            <div class="rounded-2xl border border-[#e1d8ca] bg-white p-6 shadow-soft sm:p-8">
+                <div class="flex size-11 items-center justify-center rounded-xl bg-[#e8f0e8] text-xl text-teal">↗</div>
+                <h2 class="mt-5 text-xl font-bold">Ligue o seu registo clínico</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-500">Use o número do processo e o telefone que estão registados no hospital.</p>
+                <form method="post" class="mt-6 space-y-4">
+                    <input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>">
+                    <input type="hidden" name="action" value="link-patient">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">Número do processo
+                        <input required name="medical_record_number" placeholder="HM-2026-00142" class="mt-2 w-full rounded-lg border border-[#d7cebf] bg-[#fffdf8] px-3 py-3 text-sm outline-none focus:border-teal">
+                    </label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-500">Telefone registado
+                        <input required name="phone" placeholder="923 441 802" class="mt-2 w-full rounded-lg border border-[#d7cebf] bg-[#fffdf8] px-3 py-3 text-sm outline-none focus:border-teal">
+                    </label>
+                    <button class="w-full rounded-lg bg-teal px-4 py-3 text-sm font-bold text-white hover:bg-[#185b58]">Ligar o meu registo</button>
+                </form>
+            </div>
+            <div class="rounded-2xl border border-[#e1d8ca] bg-[#e8f0e8]/60 p-6 sm:p-8">
+                <p class="font-mono-ui text-[10px] uppercase tracking-wider text-teal">Acesso protegido</p>
+                <h2 class="mt-4 text-lg font-bold">Uma área só sua</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-500">Depois da confirmação, verá apenas o histórico associado ao seu processo clínico.</p>
+                <div class="mt-8 space-y-3 text-sm text-slate-600">
+                    <p class="flex items-center gap-3"><span class="flex size-7 items-center justify-center rounded-full bg-white text-teal">✓</span> Consultas e histórico</p>
+                    <p class="flex items-center gap-3"><span class="flex size-7 items-center justify-center rounded-full bg-white text-teal">✓</span> Mensagens seguras</p>
+                    <p class="flex items-center gap-3"><span class="flex size-7 items-center justify-center rounded-full bg-white text-teal">✓</span> Dados sempre privados</p>
+                </div>
+            </div>
+        </section>
+    <?php else: ?>
+        <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
+            <div>
+                <p class="font-mono-ui text-[10px] uppercase tracking-[.18em] text-teal">Área do paciente</p>
+                <h1 class="mt-2 text-3xl font-bold tracking-[-.04em] sm:text-4xl">Olá, <?= e($firstName) ?>.</h1>
+                <p class="mt-2 max-w-xl text-sm leading-6 text-slate-500">Aqui encontra o seu acompanhamento, os próximos passos e uma linha directa para a equipa do Hospital de Malanje.</p>
+            </div>
+            <div class="rounded-xl border border-[#d7cebf] bg-white/80 px-4 py-3">
+                <p class="font-mono-ui text-[9px] uppercase tracking-wider text-slate-400">Número do processo</p>
+                <p class="mt-1 font-mono-ui text-sm font-bold text-ink"><?= e($patient['medical_record_number']) ?></p>
+            </div>
+        </div>
+
+        <section class="mt-8 grid gap-5 lg:grid-cols-[1.35fr_.65fr]">
+            <div class="relative overflow-hidden rounded-2xl bg-teal p-6 text-white shadow-soft sm:p-8">
+                <div class="absolute -right-10 -top-16 size-48 rounded-full border-[24px] border-white/10"></div>
+                <div class="relative">
+                    <div class="flex items-center justify-between gap-4">
+                        <p class="font-mono-ui text-[10px] uppercase tracking-[.18em] text-white/60"><?= $nextAppointment ? 'Próxima consulta' : 'Acompanhamento' ?></p>
+                        <span class="rounded-full bg-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-wider"><?= $nextAppointment ? 'Agendada' : 'Tudo em dia' ?></span>
+                    </div>
+                    <?php if ($nextAppointment): ?>
+                        <p class="mt-8 text-3xl font-bold"><?= e((new DateTimeImmutable($nextAppointment['date']))->format('d/m/Y')) ?></p>
+                        <p class="mt-1 text-sm text-white/70"><?= e($nextAppointment['time']) ?> · <?= e($nextAppointment['department_name']) ?></p>
+                        <div class="mt-7 flex flex-wrap items-center gap-3">
+                            <span class="rounded-lg bg-white/10 px-3 py-2 text-xs"><?= e($nextAppointment['doctor_name']) ?></span>
+                            <a href="#consultas" class="rounded-lg bg-coral px-3 py-2 text-xs font-bold text-ink hover:bg-[#e39a77]">Ver detalhes</a>
+                        </div>
+                    <?php elseif ($latestAppointment): ?>
+                        <p class="mt-8 text-xl font-bold">Não tem consultas futuras.</p>
+                        <p class="mt-2 max-w-md text-sm leading-6 text-white/70">O seu último atendimento foi em <?= e((new DateTimeImmutable($latestAppointment['date']))->format('d/m/Y')) ?>. Fale com a equipa se precisar de novo acompanhamento.</p>
+                        <a href="#mensagens" class="mt-6 inline-flex rounded-lg bg-coral px-4 py-3 text-xs font-bold text-ink hover:bg-[#e39a77]">Falar com a equipa</a>
+                    <?php else: ?>
+                        <p class="mt-8 text-xl font-bold">Ainda não há consultas.</p>
+                        <p class="mt-2 max-w-md text-sm leading-6 text-white/70">Quando existir uma marcação, ela aparecerá aqui com data, hora e profissional.</p>
+                        <a href="#mensagens" class="mt-6 inline-flex rounded-lg bg-coral px-4 py-3 text-xs font-bold text-ink hover:bg-[#e39a77]">Pedir apoio</a>
+                    <?php endif; ?>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="rounded-2xl border border-[#e1d8ca] bg-white p-5">
+                    <p class="text-xs text-slate-500">Consultas</p>
+                    <p class="mt-3 text-3xl font-bold"><?= count($appointments) ?></p>
+                    <p class="mt-1 text-[11px] text-slate-500">no seu histórico</p>
+                </div>
+                <div class="rounded-2xl border border-[#e1d8ca] bg-white p-5">
+                    <p class="text-xs text-slate-500">Concluídas</p>
+                    <p class="mt-3 text-3xl font-bold"><?= $completedAppointments ?></p>
+                    <p class="mt-1 text-[11px] text-slate-500">atendimentos</p>
+                </div>
+                <div class="rounded-2xl border border-[#e1d8ca] bg-white p-5">
+                    <p class="text-xs text-slate-500">Mensagens</p>
+                    <p class="mt-3 text-3xl font-bold"><?= count($messages) ?></p>
+                    <p class="mt-1 text-[11px] text-slate-500">conversa segura</p>
+                </div>
+                <div class="rounded-2xl border border-[#e1d8ca] bg-[#fff4e7] p-5">
+                    <p class="text-xs text-slate-500">Documentos</p>
+                    <p class="mt-3 text-xl font-bold">Em breve</p>
+                    <p class="mt-1 text-[11px] text-slate-500">armazenamento seguro</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="mt-6 grid gap-3 sm:grid-cols-4">
+            <a href="#consultas" class="group rounded-xl border border-[#e1d8ca] bg-white p-4 transition hover:-translate-y-0.5 hover:border-teal"><span class="flex size-9 items-center justify-center rounded-lg bg-[#e8f0e8] text-teal">◷</span><p class="mt-3 text-sm font-bold">As consultas</p><p class="mt-1 text-xs text-slate-500 group-hover:text-teal">Ver histórico</p></a>
+            <a href="#mensagens" class="group rounded-xl border border-[#e1d8ca] bg-white p-4 transition hover:-translate-y-0.5 hover:border-teal"><span class="flex size-9 items-center justify-center rounded-lg bg-[#e8eefa] text-[#5268a3]">↗</span><p class="mt-3 text-sm font-bold">Falar com a equipa</p><p class="mt-1 text-xs text-slate-500 group-hover:text-teal">Enviar mensagem</p></a>
+            <a href="#perfil" class="group rounded-xl border border-[#e1d8ca] bg-white p-4 transition hover:-translate-y-0.5 hover:border-teal"><span class="flex size-9 items-center justify-center rounded-lg bg-[#fff0dc] text-[#a85f2f]">♙</span><p class="mt-3 text-sm font-bold">O meu perfil</p><p class="mt-1 text-xs text-slate-500 group-hover:text-teal">Dados pessoais</p></a>
+            <a href="#documentos" class="group rounded-xl border border-dashed border-[#d7cebf] bg-white/60 p-4 transition hover:border-teal"><span class="flex size-9 items-center justify-center rounded-lg bg-slate-100 text-slate-500">▱</span><p class="mt-3 text-sm font-bold">Documentos</p><p class="mt-1 text-xs text-slate-500 group-hover:text-teal">Em preparação</p></a>
+        </section>
+
+        <div class="mt-8 grid gap-6 lg:grid-cols-[1.25fr_.75fr]">
+            <section id="consultas" class="scroll-mt-6 overflow-hidden rounded-2xl border border-[#e1d8ca] bg-white">
+                <div class="flex items-start justify-between gap-4 border-b border-[#e1d8ca] px-5 py-5 sm:px-6">
+                    <div><p class="font-mono-ui text-[9px] uppercase tracking-[.18em] text-teal">Linha do tempo</p><h2 class="mt-1 text-lg font-bold">As suas consultas</h2><p class="mt-1 text-xs text-slate-500">Acompanhe os seus atendimentos mais recentes.</p></div>
+                    <span class="rounded-full bg-[#e8f0e8] px-3 py-1 text-[10px] font-bold text-teal"><?= count($appointments) ?> registos</span>
+                </div>
+                <?php if (!$appointments): ?>
+                    <p class="px-6 py-12 text-center text-sm text-slate-500">Ainda não existem consultas associadas.</p>
+                <?php else: ?>
+                    <div class="px-5 py-2 sm:px-6">
+                        <?php foreach (array_slice($appointments, 0, 5) as $appointment): ?>
+                            <?php $status = $appointment['status']; ?>
+                            <div class="relative flex gap-4 border-b border-[#eee7dc] py-5 last:border-0">
+                                <div class="relative flex w-7 shrink-0 justify-center"><span class="z-10 mt-1 flex size-3 rounded-full border-4 border-[#e8f0e8] bg-teal"></span><span class="absolute left-1/2 top-4 h-full w-px -translate-x-1/2 bg-[#e1d8ca] last:hidden"></span></div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-col justify-between gap-2 sm:flex-row sm:items-start"><div><p class="text-sm font-bold"><?= e($appointment['department_name']) ?></p><p class="mt-1 text-xs text-slate-500"><?= e((new DateTimeImmutable($appointment['date']))->format('d/m/Y')) ?> às <?= e($appointment['time']) ?> · <?= e($appointment['doctor_name']) ?></p></div><span class="w-fit rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider <?= $statusClasses[$status] ?? 'bg-slate-100 text-slate-600' ?>"><?= e($statusLabels[$status] ?? $status) ?></span></div>
+                                    <?php if (!empty($appointment['notes'])): ?><p class="mt-3 rounded-lg bg-[#fbf8f1] px-3 py-2 text-xs leading-5 text-slate-600"><?= e($appointment['notes']) ?></p><?php endif; ?>
+                                    <p class="mt-2 text-[10px] uppercase tracking-wider text-slate-400"><?= e($typeLabels[$appointment['type']] ?? $appointment['type']) ?></p>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </section>
+
+            <div class="space-y-6">
+                <section id="perfil" class="scroll-mt-6 rounded-2xl border border-[#e1d8ca] bg-white p-5 sm:p-6">
+                    <div class="flex items-center justify-between"><div><p class="font-mono-ui text-[9px] uppercase tracking-[.18em] text-teal">Dados pessoais</p><h2 class="mt-1 text-lg font-bold">O meu perfil</h2></div><span class="flex size-10 items-center justify-center rounded-full bg-[#e8f0e8] text-lg font-bold text-teal"><?= e(strtoupper(substr((string) $patient['name'], 0, 1))) ?></span></div>
+                    <div class="mt-5 grid grid-cols-2 gap-x-4 gap-y-4 text-sm"><div><p class="text-[11px] text-slate-400">Nome</p><p class="mt-1 font-semibold"><?= e($patient['name']) ?></p></div><div><p class="text-[11px] text-slate-400">Idade</p><p class="mt-1 font-semibold"><?= age_from_date((string) $patient['birth_date']) ?> anos</p></div><div><p class="text-[11px] text-slate-400">Telefone</p><p class="mt-1 font-semibold"><?= e($patient['phone']) ?></p></div><div><p class="text-[11px] text-slate-400">Bairro</p><p class="mt-1 font-semibold"><?= e($patient['neighborhood'] ?: 'Não indicado') ?></p></div></div>
+                    <p class="mt-5 border-t border-[#eee7dc] pt-4 text-xs leading-5 text-slate-500">Precisa de actualizar estes dados? Envie uma mensagem à equipa.</p>
+                </section>
+
+                <section id="mensagens" class="scroll-mt-6 overflow-hidden rounded-2xl border border-[#e1d8ca] bg-white">
+                    <div class="border-b border-[#e1d8ca] px-5 py-5 sm:px-6"><p class="font-mono-ui text-[9px] uppercase tracking-[.18em] text-teal">Contacto seguro</p><h2 class="mt-1 text-lg font-bold">Falar com a equipa</h2><p class="mt-1 text-xs text-slate-500">Envie uma mensagem sobre o seu acompanhamento.</p></div>
+                    <div class="px-5 py-5 sm:px-6">
+                        <?php if ($lastMessage): ?><p class="rounded-xl bg-[#e8f0e8] px-4 py-3 text-sm leading-6 text-ink"><?= nl2br(e($lastMessage['body'])) ?></p><?php else: ?><p class="rounded-xl bg-[#fbf8f1] px-4 py-3 text-xs leading-5 text-slate-500">Ainda não iniciou uma conversa. A equipa poderá responder aqui.</p><?php endif; ?>
+                        <form method="post" class="mt-4 space-y-3"><input type="hidden" name="csrf" value="<?= e(csrf_token()) ?>"><input type="hidden" name="action" value="message"><textarea name="body" required maxlength="2000" rows="3" placeholder="Escreva a sua mensagem…" class="w-full resize-none rounded-xl border border-[#d7cebf] bg-[#fffdf8] px-3 py-3 text-sm outline-none focus:border-teal"></textarea><button class="w-full rounded-lg bg-teal px-4 py-3 text-sm font-bold text-white hover:bg-[#185b58]">Enviar mensagem</button></form>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <section id="documentos" class="mt-6 scroll-mt-6 rounded-2xl border border-dashed border-[#d7cebf] bg-white/70 p-5 sm:p-6">
+            <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center"><div class="flex gap-4"><span class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#fff0dc] text-xl text-[#a85f2f]">▱</span><div><p class="font-mono-ui text-[9px] uppercase tracking-[.18em] text-[#a85f2f]">Em preparação</p><h2 class="mt-1 text-lg font-bold">Documentos, receitas e resultados</h2><p class="mt-1 max-w-2xl text-xs leading-5 text-slate-500">Esta área ficará disponível com armazenamento seguro para documentos clínicos. Os seus dados não são guardados no navegador.</p></div></div><span class="w-fit rounded-full bg-[#fff0dc] px-3 py-1 text-[10px] font-bold text-[#a85f2f]">App Storage pendente</span></div>
+        </section>
+    <?php endif; ?>
+</main>
