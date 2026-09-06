@@ -1,3 +1,5 @@
+<!-- Cabeçalho privado reutilizado pelo portal do paciente e pelas páginas de equipa. -->
+<!-- O destino inicial depende do papel e o link do perfil só aparece para pacientes. -->
 <header class="border-b border-[#e1d8ca] bg-white/80 backdrop-blur">
     <div class="mx-auto flex max-w-7xl items-center justify-between px-5 py-4 sm:px-8">
         <a href="<?= url($user['role'] === 'patient' ? 'portal' : 'dashboard') ?>" class="flex items-center gap-3"><img src="<?= e(asset_url('logo.svg')) ?>" class="size-10 rounded-xl" alt=""><div><p class="text-sm font-bold">Hospital de Malanje</p><p class="font-mono-ui text-[9px] uppercase tracking-[.16em] text-slate-500"><?= $user['role'] === 'patient' ? 'Área do paciente' : 'Central de consultas' ?></p></div></a>

@@ -1,4 +1,6 @@
 <?php
+// A navegação é construída a partir da matriz de permissões para não mostrar
+// ligações que a conta actual não pode abrir.
 $items = [
     'dashboard' => ['Visão geral', '⌂', 'dashboard'],
     'appointments' => ['Consultas', '◷', 'appointments'],

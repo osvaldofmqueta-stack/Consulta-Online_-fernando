@@ -1,8 +1,15 @@
 <?php
+/**
+ * Área privada do paciente.
+ *
+ * Cada acção parte da conta autenticada e confirma patient_id antes de
+ * consultar ou alterar dados clínicos, mensagens e consultas.
+ */
 declare(strict_types=1);
 
 final class PortalController
 {
+    /** Reúne o resumo, agenda, mensagens e documentos do próprio paciente. */
     public function index(array $user): never
     {
         $patient = $user['patient_id'] ? Patient::find((int) $user['patient_id']) : null;
@@ -35,27 +42,34 @@ final class PortalController
             'prescriptions' => $patient ? Clinical::prescriptionsForPatient((int) $patient['id']) : [],
             'results' => $patient ? Clinical::resultsForPatient((int) $patient['id']) : [],
             'settings' => Clinical::settings(),
-            'departments' => $patient ? Appointment::activeDepartments() : [],
-            'doctors' => $patient ? Appointment::activeDoctors() : [],
+            'departments' => Appointment::activeDepartments(),
+            'doctors' => Appointment::activeDoctors(),
             'availableTimes' => Appointment::availableTimes(),
         ], 'Portal do paciente');
     }
 
+    /** Liga manualmente a conta a um processo usando processo + telefone. */
     public function linkPatient(array $user): never
     {
+        if ($user['role'] !== 'patient' || $user['patient_id']) {
+            flash('O seu registo clínico já está ligado a esta conta.');
+            redirect_to(url('portal'));
+        }
         $patient = Patient::findByRecordAndPhone(
             (string) ($_POST['medical_record_number'] ?? ''),
             (string) ($_POST['phone'] ?? '')
         );
         if (!$patient) {
             flash('Não encontrámos um registo com esses dados.');
-        } else {
-            Account::linkPatient((int) $user['id'], (int) $patient['id']);
+        } elseif (Account::linkPatient((int) $user['id'], (int) $patient['id'])) {
             flash('Registo clínico ligado à sua conta.');
+        } else {
+            flash('O seu registo clínico já está ligado a esta conta.');
         }
         redirect_to(url('portal'));
     }
 
+    /** Valida e cria um pedido de consulta com estado pending. */
     public function bookAppointment(array $user): never
     {
         if (!$user['patient_id']) {
@@ -112,6 +126,7 @@ final class PortalController
         redirect_to(url('portal') . '#consultas');
     }
 
+    /** Cancela uma consulta futura pertencente ao próprio paciente. */
     public function cancelAppointment(array $user): never
     {
         $appointmentId = (int) ($_POST['appointment_id'] ?? 0);
@@ -124,6 +139,7 @@ final class PortalController
         redirect_to(url('portal') . '#consultas');
     }
 
+    /** Actualiza apenas telefone e bairro do próprio perfil clínico. */
     public function updateProfile(array $user): never
     {
         $phone = trim((string) ($_POST['phone'] ?? ''));
@@ -138,6 +154,7 @@ final class PortalController
         redirect_to(url('portal') . '#perfil');
     }
 
+    /** Permite trocar a palavra-passe depois de confirmar a actual. */
     public function changePassword(array $user): never
     {
         $current = (string) ($_POST['current_password'] ?? '');
@@ -151,6 +168,7 @@ final class PortalController
         redirect_to(url('portal') . '#perfil');
     }
 
+    /** Envia uma mensagem para o último médico relacionado com o paciente. */
     public function sendMessage(array $user): never
     {
         $body = trim((string) ($_POST['body'] ?? ''));
@@ -166,6 +184,7 @@ final class PortalController
         redirect_to(url('portal'));
     }
 
+    /** Faz download protegido e auditado de um documento clínico. */
     public function downloadDocument(array $user): never
     {
         $documentId = (int) ($_GET['id'] ?? 0);

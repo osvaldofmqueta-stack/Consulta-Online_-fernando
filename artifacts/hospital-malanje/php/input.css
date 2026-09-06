@@ -1,6 +1,9 @@
+/* Importa o motor Tailwind usado para gerar o CSS público da aplicação. */
 @import "tailwindcss";
+/* Analisa apenas os templates PHP próprios para manter o build pequeno. */
 @source "./app";
 
+/* Tokens visuais partilhados: cores institucionais e famílias tipográficas. */
 @theme {
   --color-ink: #21413f;
   --color-paper: #fbf8f1;

@@ -1,4 +1,6 @@
 <?php
+// O mesmo template serve login, registo, pedido de recuperação e redefinição.
+// Estas flags seleccionam o texto, campos e action adequados a cada modo.
 $isLogin = $mode === 'login';
 $isRegister = $mode === 'register';
 $isForgot = $mode === 'forgot';
@@ -14,8 +16,9 @@ $isReset = $mode === 'reset';
             </div>
         </a>
         <div class="rounded-2xl border border-[#e1d8ca] bg-white p-6 shadow-soft sm:p-8">
-            <p class="font-mono-ui text-[10px] uppercase tracking-[.18em] text-teal"><?= $isLogin ? 'Acesso seguro' : ($isRegister ? 'Nova conta' : 'Segurança da conta') ?></p>
-            <h1 class="mt-2 text-2xl font-bold"><?= $isLogin ? 'Bem-vindo de volta' : ($isRegister ? 'Crie a sua conta' : ($isForgot ? 'Recuperar acesso' : 'Definir nova palavra-passe')) ?></h1>
+            <p class="font-mono-ui text-[10px] uppercase tracking-[.18em] text-teal"><?= $isLogin ? 'Acesso seguro' : ($isRegister ? 'Conta de paciente' : 'Segurança da conta') ?></p>
+            <h1 class="mt-2 text-2xl font-bold"><?= $isLogin ? 'Bem-vindo de volta' : ($isRegister ? 'Crie a sua conta de paciente' : ($isForgot ? 'Recuperar acesso' : 'Definir nova palavra-passe')) ?></h1>
+            <?php if ($isRegister): ?><p class="mt-2 text-sm leading-6 text-slate-500">Esta conta dá acesso apenas ao portal do paciente. Contas de médicos, recepção e administração são criadas pelo administrador do hospital.</p><?php endif; ?>
             <?php if ($isForgot): ?>
                 <p class="mt-2 text-sm leading-6 text-slate-500">Indique o email da conta para gerar um link local, válido durante 60 minutos e utilizável uma única vez.</p>
             <?php elseif ($isReset): ?>
@@ -31,6 +34,8 @@ $isReset = $mode === 'reset';
                 <?php elseif ($isRegister): ?>
                     <input type="hidden" name="action" value="register">
                     <label class="block text-xs font-bold text-slate-500">Nome completo<input name="name" autocomplete="name" required class="mt-2 w-full rounded-lg border border-[#d7cebf] px-3 py-3 text-sm outline-none focus:border-teal"></label>
+                    <label class="block text-xs font-bold text-slate-500">Telefone registado<input name="phone" autocomplete="tel" required placeholder="923 000 000" class="mt-2 w-full rounded-lg border border-[#d7cebf] px-3 py-3 text-sm outline-none focus:border-teal"></label>
+                    <label class="block text-xs font-bold text-slate-500">Número do processo <span class="font-normal text-slate-400">(se já foi criado pelo hospital)</span><input name="medical_record_number" placeholder="HM-2026-00142" class="mt-2 w-full rounded-lg border border-[#d7cebf] px-3 py-3 text-sm outline-none focus:border-teal"></label>
                     <label class="block text-xs font-bold text-slate-500">Email<input type="email" name="email" autocomplete="email" required class="mt-2 w-full rounded-lg border border-[#d7cebf] px-3 py-3 text-sm outline-none focus:border-teal"></label>
                     <label class="block text-xs font-bold text-slate-500">Palavra-passe<input type="password" name="password" autocomplete="new-password" required minlength="8" class="mt-2 w-full rounded-lg border border-[#d7cebf] px-3 py-3 text-sm outline-none focus:border-teal"></label>
                     <button class="w-full rounded-lg bg-teal px-4 py-3 text-sm font-bold text-white">Criar conta</button>

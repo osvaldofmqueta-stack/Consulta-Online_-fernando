@@ -2,3 +2,4 @@
 - [App Storage availability](object-storage-availability.md) — Private clinical files require App Storage; the current workspace credit budget blocks provisioning.
 - [Clinical delivery storage](delivery-architecture.md) — Clinical documents use encrypted-access PostgreSQL bytea records while App Storage is unavailable; preserve role-gated download access.
 - [Local account recovery](local-account-recovery.md) — This installation intentionally recovers passwords through a one-time in-app link instead of external email delivery.
+- [Roles vs clinical classification](roles-vs-clinical-classification.md) — Account roles control permissions; patient clinical classification is separate data managed by staff.

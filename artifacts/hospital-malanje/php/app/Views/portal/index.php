@@ -1,4 +1,6 @@
 <?php
+// Dados derivados para o resumo: o controlador já filtrou tudo pelo patient_id
+// da conta autenticada antes de entregar estas variáveis ao template.
 $firstName = explode(' ', trim((string) $user['name']))[0] ?: 'Paciente';
 $latestAppointment = $appointments[0] ?? null;
 $lastMessage = $messages ? $messages[count($messages) - 1] : null;
@@ -24,6 +26,7 @@ $typeLabels = [
 ];
 ?>
 <?php require __DIR__ . '/../partials/header.php'; ?>
+<!-- Portal privado com resumo, marcação, consultas, mensagens, documentos e perfil. -->
 <main class="noise mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-12">
     <?php if (!$patient): ?>
         <div class="mb-8">
@@ -51,7 +54,7 @@ $typeLabels = [
             <div class="rounded-2xl border border-[#e1d8ca] bg-[#e8f0e8]/60 p-6 sm:p-8">
                 <p class="font-mono-ui text-[10px] uppercase tracking-wider text-teal">Acesso protegido</p>
                 <h2 class="mt-4 text-lg font-bold">Uma área só sua</h2>
-                <p class="mt-2 text-sm leading-6 text-slate-500">Depois da confirmação, verá apenas o histórico associado ao seu processo clínico.</p>
+                 <p class="mt-2 text-sm leading-6 text-slate-500">Depois da confirmação, verá apenas o histórico associado ao seu processo clínico. As consultas já marcadas aparecerão automaticamente.</p>
                 <div class="mt-8 space-y-3 text-sm text-slate-600">
                     <p class="flex items-center gap-3"><span class="flex size-7 items-center justify-center rounded-full bg-white text-teal">✓</span> Consultas e histórico</p>
                     <p class="flex items-center gap-3"><span class="flex size-7 items-center justify-center rounded-full bg-white text-teal">✓</span> Mensagens seguras</p>
@@ -59,6 +62,10 @@ $typeLabels = [
                 </div>
             </div>
         </section>
+         <section class="mt-6 rounded-2xl border border-[#e1d8ca] bg-white p-6 sm:p-8">
+             <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-start"><div><p class="font-mono-ui text-[10px] uppercase tracking-[.18em] text-teal">Directório clínico</p><h2 class="mt-2 text-xl font-bold">Médicos e serviços disponíveis</h2><p class="mt-2 text-sm leading-6 text-slate-500">Estes são os profissionais activos do Hospital de Malanje. Ligue o seu registo para poder marcar uma consulta.</p></div><span class="w-fit rounded-full bg-[#e8f0e8] px-3 py-1 text-[10px] font-bold text-teal"><?= count($doctors) ?> médicos</span></div>
+             <div class="mt-6 grid gap-3 sm:grid-cols-2"><?php foreach ($doctors as $doctor): ?><div class="rounded-xl border border-[#eee7dc] bg-[#fbf8f1] px-4 py-3"><p class="text-sm font-bold"><?= e($doctor['name']) ?></p><p class="mt-1 text-xs text-slate-500"><?= e($doctor['specialty']) ?> · <?= e($doctor['department_name']) ?></p></div><?php endforeach; ?><?php if (!$doctors): ?><p class="rounded-xl bg-[#fbf8f1] px-4 py-4 text-xs text-slate-500 sm:col-span-2">Ainda não existem médicos activos publicados.</p><?php endif; ?></div>
+         </section>
     <?php else: ?>
         <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
             <div>
@@ -187,6 +194,8 @@ $typeLabels = [
             </form>
         </section>
         <script>
+            // Filtra os médicos apresentados depois de o paciente escolher um departamento.
+            // As opções originais ficam guardadas para que a mudança de departamento seja reversível.
             (() => {
                 const department = document.querySelector('#booking-department');
                 const doctor = document.querySelector('#booking-doctor');

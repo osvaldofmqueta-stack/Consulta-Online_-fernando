@@ -2,8 +2,12 @@
 setlocal EnableExtensions EnableDelayedExpansion
 title Hospital de Malanje - Instalador local
 
+rem Instalador Windows para o Hospital de Malanje.
+rem Prepara portal, agenda, pacientes, classificacao clinica,
+rem documentos clinicos e contas internas.
 set "ROOT=%~dp0"
 set "APP_SOURCE=%ROOT%artifacts\hospital-malanje"
+set "APP_VERSION=1.0"
 set "DB_NAME=hospital_malanje"
 set "DB_HOST=127.0.0.1"
 set "DB_PORT=3306"
@@ -15,6 +19,24 @@ if not exist "%APP_SOURCE%\public\index.php" (
     echo [ERRO] Nao foi encontrada a aplicacao em:
     echo        %APP_SOURCE%
     echo.
+    pause
+    exit /b 1
+)
+if not exist "%APP_SOURCE%\database\hospital-malanje.sql" (
+    echo.
+    echo [ERRO] O esquema MySQL/MariaDB nao foi encontrado.
+    pause
+    exit /b 1
+)
+if not exist "%APP_SOURCE%\php\install_config.php" (
+    echo.
+    echo [ERRO] O script de configuracao local nao foi encontrado.
+    pause
+    exit /b 1
+)
+if not exist "%APP_SOURCE%\php\install_admin.php" (
+    echo.
+    echo [ERRO] O script de criacao do administrador nao foi encontrado.
     pause
     exit /b 1
 )
@@ -83,12 +105,37 @@ if not exist "%MYSQL_EXE%" (
     exit /b 4
 )
 
+rem O codigo usa recursos do PHP 8.1, incluindo o tipo never.
+"%PHP_EXE%" -r "exit(version_compare(PHP_VERSION, '8.1.0', '>=') ? 0 : 1);" >nul 2>&1
+if errorlevel 1 (
+    echo [ERRO] O PHP encontrado precisa de ser a versao 8.1 ou superior.
+    "%PHP_EXE%" -v
+    pause
+    exit /b 5
+)
+
+rem pdo_mysql liga ao MySQL/MariaDB; mbstring trata texto UTF-8;
+rem fileinfo identifica com seguranca documentos clinicos enviados.
 "%PHP_EXE%" -m 2>nul | findstr /I /C:"pdo_mysql" >nul
 if errorlevel 1 (
     echo [ERRO] A extensao PHP pdo_mysql nao esta activa.
     echo Active pdo_mysql no php.ini do XAMPP/WAMP e execute novamente.
     pause
-    exit /b 5
+    exit /b 6
+)
+"%PHP_EXE%" -m 2>nul | findstr /I /C:"mbstring" >nul
+if errorlevel 1 (
+    echo [ERRO] A extensao PHP mbstring nao esta activa.
+    echo Active mbstring no php.ini do XAMPP/WAMP e execute novamente.
+    pause
+    exit /b 6
+)
+"%PHP_EXE%" -m 2>nul | findstr /I /C:"fileinfo" >nul
+if errorlevel 1 (
+    echo [ERRO] A extensao PHP fileinfo nao esta activa.
+    echo Ela e necessaria para validar documentos clinicos enviados.
+    pause
+    exit /b 6
 )
 
 set "APP_INSTALL=%WEBROOT%\hospital-malanje"
@@ -128,7 +175,7 @@ if errorlevel 1 (
     )
 )
 
-echo [3/7] A criar a base de dados %DB_NAME%...
+echo [3/8] A criar a base de dados %DB_NAME%...
 "%MYSQL_EXE%" -h "%DB_HOST%" -P "%DB_PORT%" -u "%DB_USER%" -e "CREATE DATABASE IF NOT EXISTS %DB_NAME% CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" >nul 2>&1
 if errorlevel 1 (
     echo [ERRO] Nao foi possivel criar a base de dados.
@@ -136,10 +183,10 @@ if errorlevel 1 (
     exit /b 8
 )
 
-echo [4/7] A copiar a aplicacao para:
+echo [4/8] A copiar a aplicacao para:
 echo        %APP_INSTALL%
 if exist "%APP_INSTALL%" (
-    echo A pasta ja existe. Os ficheiros da aplicacao serao actualizados e os dados locais serao preservados.
+    echo A pasta ja existe. Os ficheiros serao actualizados e os dados locais preservados.
 )
 robocopy "%APP_SOURCE%" "%APP_INSTALL%" /E /XD node_modules dist .replit-artifact /XF config.local.php /NFL /NDL /NJH /NJS /NP >nul
 if errorlevel 8 (
@@ -148,15 +195,17 @@ if errorlevel 8 (
     exit /b 9
 )
 
-echo [5/7] A importar as tabelas portuguesas...
-"%MYSQL_EXE%" --default-character-set=utf8mb4 -h "%DB_HOST%" -P "%DB_PORT%" -u "%DB_USER%" "%DB_NAME%" < "%APP_SOURCE%\database\hospital-malanje.sql"
+echo [5/8] A importar ou actualizar as tabelas portuguesas...
+rem O SQL e idempotente; a aplicacao tambem executa migracoes leves ao abrir.
+"%MYSQL_EXE%" --default-character-set=utf8mb4 -h "%DB_HOST%" -P "%DB_PORT%" -u "%DB_USER%" "%DB_NAME%" < "%APP_INSTALL%\database\hospital-malanje.sql"
 if errorlevel 1 (
     echo [ERRO] A importacao da base de dados falhou.
     pause
     exit /b 10
 )
 
-echo [6/7] A guardar a configuracao local e criar o administrador...
+echo [6/8] A guardar a configuracao local e criar o administrador...
+rem Estas variaveis sao lidas pelos scripts PHP sem serem impressas no ecra.
 set "HM_DB_HOST=%DB_HOST%"
 set "HM_DB_PORT=%DB_PORT%"
 set "HM_DB_NAME=%DB_NAME%"
@@ -177,8 +226,10 @@ if errorlevel 1 (
 del /q "%APP_INSTALL%\php\install_config.php" "%APP_INSTALL%\php\install_admin.php" >nul 2>&1
 
 set "APP_URL=http://localhost/hospital-malanje/public/"
-echo [7/7] A testar a aplicacao...
-powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $r=Invoke-WebRequest -UseBasicParsing -Uri '%APP_URL%?page=login' -TimeoutSec 15; if ($r.StatusCode -lt 200 -or $r.StatusCode -ge 400) { exit 1 } } catch { exit 1 }"
+echo [7/8] A testar o portal e as migracoes...
+rem Abrir login e registo executa ensureSchema(), incluindo patient_type
+rem e active em bases antigas que ainda nao tenham estas colunas.
+powershell -NoProfile -ExecutionPolicy Bypass -Command "try { $login=Invoke-WebRequest -UseBasicParsing -Uri '%APP_URL%?page=login' -TimeoutSec 15; $register=Invoke-WebRequest -UseBasicParsing -Uri '%APP_URL%?page=register' -TimeoutSec 15; if ($login.StatusCode -lt 200 -or $login.StatusCode -ge 400 -or $register.StatusCode -lt 200 -or $register.StatusCode -ge 400 -or $register.Content -notmatch 'Conta de paciente') { exit 1 } } catch { exit 1 }"
 if errorlevel 1 (
     echo [ERRO] A aplicacao nao respondeu correctamente.
     echo Verifique o Apache, o php.ini e o ficheiro:
@@ -189,11 +240,19 @@ if errorlevel 1 (
 
 set "MYSQL_PWD="
 echo.
-echo INSTALACAO CONCLUIDA COM SUCESSO.
+echo [8/8] INSTALACAO CONCLUIDA COM SUCESSO.
 echo.
+echo Versao:     %APP_VERSION%
 echo Aplicacao:  %APP_URL%
 echo Base dados:  http://localhost/phpmyadmin/
 echo Nome BD:     %DB_NAME%
+echo.
+echo Funcionalidades preparadas:
+echo   - Portal privado e registo de pacientes
+echo   - Agenda, fila e pedidos de consulta
+echo   - Classificacao clinica dos pacientes
+echo   - Contas internas com papeis e permissoes
+echo   - Documentos, receitas, resultados e auditoria
 echo.
 start "" "%APP_URL%"
 start "" "http://localhost/phpmyadmin/"

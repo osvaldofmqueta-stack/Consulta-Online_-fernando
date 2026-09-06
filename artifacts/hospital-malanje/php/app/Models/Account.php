@@ -1,8 +1,15 @@
 <?php
+/**
+ * Acesso a contas, papéis, associações e recuperação de palavra-passe.
+ *
+ * As contas internas usam doctor_id para limitar a agenda do médico.
+ * As contas de paciente usam patient_id para limitar os dados do portal.
+ */
 declare(strict_types=1);
 
 final class Account
 {
+    /** Cria tabelas de contas compatíveis com MySQL/MariaDB e PostgreSQL. */
     public static function ensureSchema(): void
     {
         if (Database::driver() === 'mysql') {
@@ -60,6 +67,7 @@ final class Account
         SQL);
     }
 
+    /** Procura uma conta pelo identificador interno. */
     public static function find(int $id): ?array
     {
         $stmt = Database::connection()->prepare('SELECT * FROM contas WHERE id = ?');
@@ -67,6 +75,7 @@ final class Account
         return $stmt->fetch() ?: null;
     }
 
+    /** Procura a conta pelo email normalizado para minúsculas. */
     public static function findByEmail(string $email): ?array
     {
         $stmt = Database::connection()->prepare('SELECT * FROM contas WHERE email = ?');
@@ -74,19 +83,30 @@ final class Account
         return $stmt->fetch() ?: null;
     }
 
-    public static function create(string $name, string $email, string $password): int
+    /** Cria exclusivamente uma conta de paciente para o registo público. */
+    public static function createPatient(string $name, string $email, string $password): int
     {
-        $stmt = Database::connection()->prepare('INSERT INTO contas (name, email, password_hash) VALUES (?, ?, ?)');
+        $stmt = Database::connection()->prepare("INSERT INTO contas (name, email, password_hash, role) VALUES (?, ?, ?, 'patient')");
         $stmt->execute([trim($name), strtolower(trim($email)), password_hash($password, PASSWORD_DEFAULT)]);
         return Database::driver() === 'mysql'
             ? (int) Database::connection()->lastInsertId()
             : (int) Database::connection()->query('SELECT LASTVAL()')->fetchColumn();
     }
 
+    /** Mantém compatibilidade com chamadas antigas que criavam pacientes. */
+    public static function create(string $name, string $email, string $password): int
+    {
+        return self::createPatient($name, $email, $password);
+    }
+
+    /** Cria uma conta interna e exige um médico activo quando o papel é doctor. */
     public static function createStaff(string $name, string $email, string $password, string $role, ?int $doctorId = null): int
     {
         if (!in_array($role, ['admin', 'doctor', 'receptionist'], true)) {
             throw new InvalidArgumentException('Papel inválido.');
+        }
+        if ($role === 'doctor' && (!$doctorId || !Appointment::activeDoctorExists($doctorId))) {
+            throw new InvalidArgumentException('Associe a conta a um médico activo.');
         }
         $stmt = Database::connection()->prepare('INSERT INTO contas (name, email, password_hash, role, doctor_id, active) VALUES (?, ?, ?, ?, ?, ' . (Database::driver() === 'mysql' ? '1' : 'TRUE') . ')');
         $stmt->execute([trim($name), strtolower(trim($email)), password_hash($password, PASSWORD_DEFAULT), $role, $role === 'doctor' ? ($doctorId ?: null) : null]);
@@ -95,12 +115,19 @@ final class Account
             : (int) Database::connection()->query('SELECT LASTVAL()')->fetchColumn();
     }
 
-    public static function linkPatient(int $accountId, int $patientId): void
+    /** Liga uma conta paciente a um único registo clínico ainda não associado. */
+    public static function linkPatient(int $accountId, int $patientId): bool
     {
-        $stmt = Database::connection()->prepare('UPDATE contas SET patient_id = ? WHERE id = ?');
+        $stmt = Database::connection()->prepare("UPDATE contas SET patient_id = ? WHERE id = ? AND role = 'patient' AND patient_id IS NULL");
         $stmt->execute([$patientId, $accountId]);
+        return $stmt->rowCount() > 0;
     }
 
+    /**
+     * Matriz central de autorização da aplicação.
+     *
+     * A classificação clínica do paciente não participa nesta decisão.
+     */
     public static function roleCan(string $role, string $permission): bool
     {
         $permissions = [
@@ -112,21 +139,32 @@ final class Account
         return in_array($permission, $permissions[$role] ?? [], true);
     }
 
+    /** Lista apenas contas internas para a área de administração. */
     public static function allStaff(): array
     {
         return Database::connection()->query("SELECT id, name, email, role, doctor_id, active, created_at FROM contas WHERE role <> 'patient' ORDER BY name")->fetchAll();
     }
 
-    public static function updateStaff(int $id, string $role, bool $active, ?int $doctorId = null): void
+    /** Actualiza papel, estado e associação clínica de uma conta interna. */
+    public static function updateStaff(int $id, string $role, bool $active, ?int $doctorId = null): bool
     {
         $allowed = ['admin', 'doctor', 'receptionist'];
         if (!in_array($role, $allowed, true)) {
-            return;
+            return false;
+        }
+        if ($role === 'doctor' && (!$doctorId || !Appointment::activeDoctorExists($doctorId))) {
+            return false;
+        }
+        $account = self::find($id);
+        if (!$account || $account['role'] === 'patient') {
+            return false;
         }
         $stmt = Database::connection()->prepare('UPDATE contas SET role = ?, doctor_id = ?, active = ? WHERE id = ? AND role <> ?');
         $stmt->execute([$role, $role === 'doctor' ? ($doctorId ?: null) : null, $active, $id, 'patient']);
+        return true;
     }
 
+    /** Gera um token local de recuperação com validade de 60 minutos. */
     public static function createPasswordReset(string $email): ?array
     {
         $account = self::findByEmail($email);
@@ -142,6 +180,7 @@ final class Account
         return ['account' => $account, 'token' => $token];
     }
 
+    /** Valida, consome uma única vez e aplica um token de recuperação. */
     public static function resetPassword(string $token, string $password): bool
     {
         $stmt = Database::connection()->prepare('SELECT id, account_id FROM tokens_recuperacao WHERE token_hash = ? AND used_at IS NULL AND expires_at > NOW()');
@@ -165,6 +204,7 @@ final class Account
         }
     }
 
+    /** Altera a palavra-passe apenas depois de verificar a palavra-passe actual. */
     public static function changePassword(int $accountId, string $currentPassword, string $newPassword): bool
     {
         $account = self::find($accountId);

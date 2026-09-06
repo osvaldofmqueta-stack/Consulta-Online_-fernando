@@ -1,8 +1,15 @@
 <?php
+/**
+ * Repositório de documentos e informação clínica.
+ *
+ * Os documentos são guardados como bytes na base local e só são devolvidos
+ * depois de o controlador confirmar a identidade e o papel do utilizador.
+ */
 declare(strict_types=1);
 
 final class Clinical
 {
+    /** Lista metadados de documentos sem expor o conteúdo binário. */
     public static function documentsForPatient(int $patientId): array
     {
         $stmt = Database::connection()->prepare('
@@ -15,6 +22,7 @@ final class Clinical
         return $stmt->fetchAll();
     }
 
+    /** Carrega um documento apenas se pertencer ao paciente indicado. */
     public static function documentForPatient(int $documentId, int $patientId): ?array
     {
         $stmt = Database::connection()->prepare('SELECT * FROM documentos_pacientes WHERE id = ? AND patient_id = ?');
@@ -22,6 +30,7 @@ final class Clinical
         return $stmt->fetch() ?: null;
     }
 
+    /** Carrega um documento para uso depois da autorização da equipa. */
     public static function documentForStaff(int $documentId): ?array
     {
         $stmt = Database::connection()->prepare('SELECT * FROM documentos_pacientes WHERE id = ?');
@@ -29,6 +38,7 @@ final class Clinical
         return $stmt->fetch() ?: null;
     }
 
+    /** Guarda metadados e conteúdo binário de um documento clínico. */
     public static function saveDocument(
         int $patientId,
         int $accountId,
@@ -55,6 +65,7 @@ final class Clinical
         $stmt->execute();
     }
 
+    /** Lista receitas do paciente com o nome do médico quando disponível. */
     public static function prescriptionsForPatient(int $patientId): array
     {
         $stmt = Database::connection()->prepare('
@@ -68,6 +79,7 @@ final class Clinical
         return $stmt->fetchAll();
     }
 
+    /** Regista uma receita ligada opcionalmente a médico e consulta. */
     public static function createPrescription(
         int $patientId,
         ?int $doctorId,
@@ -95,6 +107,7 @@ final class Clinical
         ]);
     }
 
+    /** Lista resultados publicados para o paciente autenticado. */
     public static function resultsForPatient(int $patientId): array
     {
         $stmt = Database::connection()->prepare('
@@ -108,6 +121,7 @@ final class Clinical
         return $stmt->fetchAll();
     }
 
+    /** Publica um resultado clínico ligado opcionalmente a uma consulta. */
     public static function createResult(
         int $patientId,
         ?int $doctorId,
@@ -129,6 +143,7 @@ final class Clinical
         ]);
     }
 
+    /** Converte as definições hospitalares numa matriz chave => valor. */
     public static function settings(): array
     {
         $rows = Database::connection()->query('SELECT setting_key, setting_value FROM definicoes_hospital ORDER BY setting_key')->fetchAll();
@@ -139,6 +154,7 @@ final class Clinical
         return $settings;
     }
 
+    /** Guarda uma definição usando UPSERT compatível com os dois drivers. */
     public static function saveSetting(string $key, string $value): void
     {
         $upsert = Database::driver() === 'mysql'

@@ -1,4 +1,6 @@
 <?php
+// Layout comum: recebe $content já renderizado e envolve-o com metadados,
+// estilos globais, navegação opcional e a mensagem flash da sessão.
 $notice = flash();
 ?>
 <!doctype html>
@@ -12,6 +14,7 @@ $notice = flash();
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Utilitários visuais pequenos que complementam as classes Tailwind geradas. -->
     <style>body{font-family:'DM Sans',sans-serif;background:#fbf8f1;color:#21413f}.font-mono-ui{font-family:'Space Mono',monospace}.noise{background-image:radial-gradient(rgba(33,65,63,.05) .7px,transparent .7px);background-size:7px 7px}.shadow-soft{box-shadow:0 18px 45px rgba(33,65,63,.08)}</style>
 </head>
 <body class="min-h-screen">
